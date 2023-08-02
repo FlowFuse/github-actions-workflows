@@ -1,17 +1,20 @@
 name: Build and publish npm package
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
       package_name:
         description: 'Name of the package to publish'
+        type: string
         required: true
       release_name:
         description: 'Name of the release.'
+        type: string
         required: false
         default: 'nightly'
       package_dependencies:
         description: 'List of dependencies to update'
+        type: string
         required: false
         default: ''
       build_package:
