@@ -1,0 +1,68 @@
+name: Build and publish npm package
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_name:
+        description: 'Name of the package to publish'
+        required: true
+      release_name:
+        description: 'Name of the release.'
+        required: false
+        default: 'nightly'
+      package_dependencies:
+        description: 'List of dependencies to update'
+        required: false
+        default: ''
+      build_package:
+        description: 'Build package before publishing'
+        required: false
+        type: boolean
+        default: false
+      publish_package:
+        description: 'Publish package to private registry'
+        required: false
+        type: boolean
+        default: false
+
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: "Set package version"
+        run: |
+          npm version prerelease --preid `git rev-parse --short HEAD`-`date +%Y%m%d` --no-git-tag-version
+
+      - name: "Set dependecies versions"
+        if: ${{ inputs.package_dependencies != '' }}
+        run: |
+          for dependency in ${{ inputs.package_dependencies }}
+          do
+            echo "Updating $dependency to ${{ inputs.release_name }}"
+            jq '.dependencies.$dependency = ${{ inputs.release_name }}' package.json > package.json-patched
+            mv package.json-patched package.json
+          done
+
+      - name: "Build package"
+        if: ${{ inputs.build_package }}
+        run: |
+          echo '//npm.pkg.github.com/:_authToken="${{ secrets.GITHUB_TOKEN }}"' > ~/.npmrc
+          npm install --@flowforge:registry=https://npm.pkg.github.com
+          npm run build
+          rm -f ~/.npmrc
+
+      - name: "Publish flowforge package to private registry"
+        if: ${{ inputs.publish_package }}
+        uses: JS-DevTools/npm-publish@v2
+        with:
+          tag: ${{ inputs.release_name }}
+          package: ./package.json
+          registry: https://npm.pkg.github.com
+          token: ${{ secrets.GITHUB_TOKEN }}
