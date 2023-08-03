@@ -52,6 +52,7 @@ jobs:
             cat package.json | jq ".dependencies[\"$dependency\"] = \"${{ inputs.release_name }}\"" > package.json-patched
             mv package.json-patched package.json
           done
+          cat package.json
 
       - name: "Build package"
         if: ${{ inputs.build_package }}
