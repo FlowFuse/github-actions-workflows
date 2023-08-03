@@ -49,7 +49,7 @@ jobs:
           for dependency in ${{ inputs.package_dependencies }}
           do
             echo "Updating $dependency to ${{ inputs.release_name }}"
-            jq '.dependencies.$dependency = ${{ inputs.release_name }}' package.json > package.json-patched
+            cat package.json | jq ".dependencies[\"$dependency\"] = ${{ inputs.release_name }}" > package.json-patched
             mv package.json-patched package.json
           done
 
