@@ -30,7 +30,7 @@ on:
 
 
 jobs:
-  publish:
+  buildAndPublish:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -38,6 +38,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Set release name
+        run: |
+          if [ -z "${{ inputs.release_name }}" ]; then
+            echo "release_name=nightly" >> $GITHUB_ENV
+          else
+            echo "release_name=${{ inputs.release_name }}" >> $GITHUB_ENV
+          fi
 
       - name: "Set package version"
         run: |
@@ -48,8 +56,8 @@ jobs:
         run: |
           for dependency in ${{ inputs.package_dependencies }}
           do
-            echo "Updating $dependency to ${{ inputs.release_name }}"
-            cat package.json | jq ".dependencies[\"$dependency\"] = \"${{ inputs.release_name }}\"" > package.json-patched
+            echo "Updating $dependency to ${{ env.release_name }}"
+            cat package.json | jq ".dependencies[\"$dependency\"] = \"${{ env.release_name }}\"" > package.json-patched
             mv package.json-patched package.json
           done
           cat package.json
@@ -62,7 +70,7 @@ jobs:
           npm run build
           rm -f ~/.npmrc
 
-      - name: "Publish flowforge package to private registry"
+      - name: "Publish package to private registry"
         if: ${{ inputs.publish_package }}
         uses: JS-DevTools/npm-publish@v2
         with:
