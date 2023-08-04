@@ -26,6 +26,10 @@ on:
         required: false
         type: boolean
         default: false
+    outputs:
+      release_name:
+        description: 'Name of the release.'
+        value: ${{ jobs.buildAndPublish.outputs.release_name }}
 
 
 jobs:
