@@ -26,6 +26,10 @@ on:
         required: false
         type: boolean
         default: false
+    outputs:
+      release_name:
+        description: 'Name of the release.'
+        value: ${{ jobs.buildAndPublish.outputs.release_name }}
 
 
 jobs:
@@ -34,11 +38,14 @@ jobs:
     permissions:
       contents: read
       packages: write
+    outputs:
+      release_name: ${{ env.release_name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
       - name: Set release name
+        id: set_release_name
         run: |
           if [ -z "${{ inputs.release_name }}" ]; then
             echo "release_name=nightly" >> $GITHUB_ENV
@@ -73,7 +80,7 @@ jobs:
         if: ${{ inputs.publish_package }}
         uses: JS-DevTools/npm-publish@v2
         with:
-          tag: ${{ inputs.release_name }}
+          tag: ${{ env.release_name }}
           package: ./package.json
           registry: https://npm.pkg.github.com
           token: ${{ secrets.GITHUB_TOKEN }}
