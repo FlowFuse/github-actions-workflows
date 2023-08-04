@@ -26,6 +26,11 @@ on:
         required: false
         type: boolean
         default: false
+      working_directory:
+        description: 'Working directory'
+        required: false
+        type: string
+        default: '.'
     outputs:
       release_name:
         description: 'Name of the release.'
@@ -54,11 +59,13 @@ jobs:
           fi
 
       - name: "Set package version"
+        working-directory: ${{ inputs.working_directory }}
         run: |
           npm version prerelease --preid `git rev-parse --short HEAD`-`date +%Y%m%d` --no-git-tag-version
 
       - name: "Set dependecies versions"
         if: ${{ inputs.package_dependencies != '' }}
+        working-directory: ${{ inputs.working_directory }}
         run: |
           for dependency in ${{ inputs.package_dependencies }}
           do
@@ -81,6 +88,6 @@ jobs:
         uses: JS-DevTools/npm-publish@v2
         with:
           tag: ${{ env.release_name }}
-          package: ./package.json
+          package: ${{ inputs.working_directory }}/package.json
           registry: https://npm.pkg.github.com
           token: ${{ secrets.GITHUB_TOKEN }}
