@@ -72,13 +72,13 @@ jobs:
         if: ${{ inputs.package_dependencies != '' }}
         working-directory: ${{ inputs.working_directory }}
         run: |
-          for dependency in $(echo "${{ inputs.package_dependencies }}" | tr -d '\n')
+          for dependency in $(echo "${{ inputs.package_dependencies }}" | tr '\n' ' ')
           do
             echo "Updating $dependency to ${{ env.release_name }}"
             cat package.json | jq ".dependencies[\"$dependency\"] = \"${{ env.release_name }}\"" > package.json-patched
             mv package.json-patched package.json
           done
-          cat package.json
+          cat package.json  
 
       - name: "Build package"
         if: ${{ inputs.build_package }}
