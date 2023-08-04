@@ -80,7 +80,7 @@ jobs:
         if: ${{ inputs.publish_package }}
         uses: JS-DevTools/npm-publish@v2
         with:
-          tag: ${{ inputs.release_name }}
+          tag: ${{ env.release_name }}
           package: ./package.json
           registry: https://npm.pkg.github.com
           token: ${{ secrets.GITHUB_TOKEN }}
