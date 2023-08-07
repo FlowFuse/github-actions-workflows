@@ -62,6 +62,10 @@ jobs:
           else
             echo "release_name=${{ inputs.release_name }}" >> $GITHUB_ENV
           fi
+      
+      - name: Set registry URL
+        run: |
+          echo "npm_registry=https://npm.pkg.github.com" >> $GITHUB_ENV
 
       - name: "Set package version"
         working-directory: ${{ inputs.working_directory }}
@@ -84,16 +88,27 @@ jobs:
         if: ${{ inputs.build_package }}
         run: |
           echo '//npm.pkg.github.com/:_authToken="${{ secrets.GITHUB_TOKEN }}"' > ~/.npmrc
-          npm install --@flowforge:registry=https://npm.pkg.github.com
+          npm install --@flowforge:registry=${{ env.npm_registry }}
           npm run build
           rm -f ~/.npmrc
 
-      - name: "Publish package to private registry"
+      - name: Configure node
         if: ${{ inputs.publish_package }}
-        uses: JS-DevTools/npm-publish@v2
+        uses: actions/setup-node@v3
         with:
-          tag: ${{ env.release_name }}
-          package: ${{ inputs.working_directory }}/package.json
-          ignore-scripts: ${{ inputs.publish_ignore_scripts }}
-          registry: https://npm.pkg.github.com
-          token: ${{ secrets.GITHUB_TOKEN }}
+          node-version: '16'
+          registry-url: ${{ env.npm_registry }}
+      
+      - name: Set publish parameters
+        if: ${{ inputs.publish_package }}
+        run: |
+          if [ ${{ inputs.publish_ignore_scripts }} ]; then
+            echo "NPM_PUBLISH_PARAMETERS=--ignore-scripts" >> $GITHUB_ENV
+          fi
+
+      - name: Publish package
+        if: ${{ inputs.publish_package }}
+        run: |
+          npm publish ${{ env.NPM_PUBLISH_PARAMETERS }} --tag ${{ env.release_name }} ${{ inputs.working_directory }}/package.json
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
