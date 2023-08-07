@@ -109,6 +109,6 @@ jobs:
       - name: Publish package
         if: ${{ inputs.publish_package }}
         run: |
-          npm publish ${{ env.NPM_PUBLISH_PARAMETERS }} --tag ${{ env.release_name }} ${{ inputs.working_directory }}/package.json
+          npm publish ${{ env.NPM_PUBLISH_PARAMETERS }} --tag ${{ env.release_name }} ${{ inputs.working_directory }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
