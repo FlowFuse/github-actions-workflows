@@ -92,14 +92,16 @@ jobs:
           npm run build
           rm -f ~/.npmrc
 
-      - name: Configure node
+      - name: Configure node for package publ;ish
         if: ${{ inputs.publish_package }}
         uses: actions/setup-node@v3
         with:
           node-version: '16'
-          registry-url: ${{ env.npm_registry }}
+          registry-url: '${{ env.npm_registry }}'
+          scope: '@flowforge'
+          always-auth: true
       
-      - name: Set publish parameters
+      - name: Set package publish parameters
         if: ${{ inputs.publish_package }}
         run: |
           if [ ${{ inputs.publish_ignore_scripts }} ]; then
