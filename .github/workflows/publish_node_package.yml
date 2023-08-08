@@ -36,10 +36,6 @@ on:
         required: false
         type: string
         default: '.'
-    secrets:
-      node_token:
-        description: 'GitHub token'
-        required: false
     outputs:
       release_name:
         description: 'Name of the release.'
