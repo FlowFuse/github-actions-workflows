@@ -39,7 +39,7 @@ on:
     secrets:
       node_token:
         description: 'GitHub token'
-        required: true
+        required: false
     outputs:
       release_name:
         description: 'Name of the release.'
@@ -117,4 +117,4 @@ jobs:
         run: |
           npm publish ${{ env.NPM_PUBLISH_PARAMETERS }} --tag ${{ env.release_name }} ${{ inputs.working_directory }}
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.node_token }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
