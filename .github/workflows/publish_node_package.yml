@@ -76,7 +76,7 @@ jobs:
         run: |
           npm version prerelease --preid `git rev-parse --short HEAD`-`date +%Y%m%d` --no-git-tag-version
 
-      - name: "Set dependecies versions"
+      - name: Set dependecies versions
         if: ${{ inputs.package_dependencies != '' }}
         working-directory: ${{ inputs.working_directory }}
         run: |
@@ -87,23 +87,25 @@ jobs:
             mv package.json-patched package.json
           done
           cat package.json  
-
-      - name: "Build package"
-        if: ${{ inputs.build_package }}
-        run: |
-          echo '//npm.pkg.github.com/:_authToken="${{ secrets.GITHUB_TOKEN }}"' > ~/.npmrc
-          npm install --@flowforge:registry=${{ env.npm_registry }}
-          npm run build
-          rm -f ~/.npmrc
-
-      - name: Configure node for package publ;ish
-        if: ${{ inputs.publish_package }}
+      
+      - name: Configure node
+        if: |
+          inputs.publish_package ||
+          inputs.build_package
         uses: actions/setup-node@v3
         with:
           node-version: '16'
           registry-url: '${{ env.npm_registry }}'
           scope: '@flowforge'
           always-auth: true
+
+      - name: Build package
+        if: ${{ inputs.build_package }}
+        run: |
+          npm install --@flowforge:registry=${{ env.npm_registry }}
+          npm run build
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Set package publish parameters
         if: ${{ inputs.publish_package }}
