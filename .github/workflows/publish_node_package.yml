@@ -36,10 +36,6 @@ on:
         required: false
         type: string
         default: '.'
-    secrets:
-      node_token:
-        description: 'Node registry authentication token'
-        required: true
     outputs:
       release_name:
         description: 'Name of the release.'
@@ -70,6 +66,10 @@ jobs:
       - name: Set registry URL
         run: |
           echo "npm_registry=https://npm.pkg.github.com" >> $GITHUB_ENV
+
+      - name: Set node token
+        run: |
+          echo "node_token=${{ secrets.GITHUB_TOKEN }}" >> $GITHUB_ENV
 
       - name: "Set package version"
         working-directory: ${{ inputs.working_directory }}
@@ -105,7 +105,7 @@ jobs:
           npm install --@flowforge:registry=${{ env.npm_registry }}
           npm run build
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.node_token }}
+          NODE_AUTH_TOKEN: ${{ env.node_token }}
       
       - name: Set package publish parameters
         if: ${{ inputs.publish_package }}
@@ -119,4 +119,4 @@ jobs:
         run: |
           npm publish ${{ env.NPM_PUBLISH_PARAMETERS }} --tag ${{ env.release_name }} ${{ inputs.working_directory }}
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.node_token }}
+          NODE_AUTH_TOKEN: ${{ env.node_token }}
