@@ -27,7 +27,7 @@ on:
         type: boolean
         default: false
       publish_ignore_scripts:
-        description: 'Ignore scripts when publishing'
+        description: 'If true, add --ignore-scripts flag to npm publish command'
         required: false
         type: boolean
         default: true
@@ -108,7 +108,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ env.node_token }}
       
       - name: Set package publish parameters
-        if: ${{ inputs.publish_package }}
+        if: ${{ inputs.publish_package == 'true' }}
         run: |
           if [ ${{ inputs.publish_ignore_scripts }} ]; then
             echo "NPM_PUBLISH_PARAMETERS=--ignore-scripts" >> $GITHUB_ENV
