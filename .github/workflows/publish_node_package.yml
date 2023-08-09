@@ -62,13 +62,21 @@ jobs:
           else
             echo "release_name=${{ inputs.release_name }}" >> $GITHUB_ENV
           fi
+      
+      - name: Set registry URL
+        run: |
+          echo "npm_registry=https://npm.pkg.github.com" >> $GITHUB_ENV
+
+      - name: Set node token
+        run: |
+          echo "node_token=${{ secrets.GITHUB_TOKEN }}" >> $GITHUB_ENV
 
       - name: "Set package version"
         working-directory: ${{ inputs.working_directory }}
         run: |
           npm version prerelease --preid `git rev-parse --short HEAD`-`date +%Y%m%d` --no-git-tag-version
 
-      - name: "Set dependecies versions"
+      - name: Set dependecies versions
         if: ${{ inputs.package_dependencies != '' }}
         working-directory: ${{ inputs.working_directory }}
         run: |
@@ -79,21 +87,37 @@ jobs:
             mv package.json-patched package.json
           done
           cat package.json  
+      
+      - name: Configure node
+        if: |
+          inputs.publish_package ||
+          inputs.build_package
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          registry-url: '${{ env.npm_registry }}'
+          scope: '@flowforge'
+          always-auth: true
 
-      - name: "Build package"
+      - name: Build package
         if: ${{ inputs.build_package }}
         run: |
-          echo '//npm.pkg.github.com/:_authToken="${{ secrets.GITHUB_TOKEN }}"' > ~/.npmrc
-          npm install --@flowforge:registry=https://npm.pkg.github.com
+          npm install --@flowforge:registry=${{ env.npm_registry }}
           npm run build
-          rm -f ~/.npmrc
-
-      - name: "Publish package to private registry"
+        env:
+          NODE_AUTH_TOKEN: ${{ env.node_token }}
+      
+      - name: Set package publish parameters
         if: ${{ inputs.publish_package }}
-        uses: JS-DevTools/npm-publish@v2
-        with:
-          tag: ${{ env.release_name }}
-          package: ${{ inputs.working_directory }}/package.json
-          ignore-scripts: ${{ inputs.publish_ignore_scripts }}
-          registry: https://npm.pkg.github.com
-          token: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ ${{ inputs.publish_ignore_scripts }} ]; then
+            echo "NPM_PUBLISH_PARAMETERS=--ignore-scripts" >> $GITHUB_ENV
+          fi
+
+      - name: Publish package
+        if: ${{ inputs.publish_package }}
+        working-directory: ${{ inputs.working_directory }}
+        run: |
+          npm publish ${{ env.NPM_PUBLISH_PARAMETERS }} --tag ${{ env.release_name }}
+        env:
+          NODE_AUTH_TOKEN: ${{ env.node_token }}
