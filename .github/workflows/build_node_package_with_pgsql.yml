@@ -1,0 +1,54 @@
+name: Build and test npm package with PostgreSQL service
+
+on:
+  workflow_call:
+    inputs:
+      run_tests:
+        description: 'Run tests'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_PASSWORD: secret
+          POSTGRES_USER: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    strategy:
+      matrix:
+          node-version: [16.x]
+    steps:
+        - name: Checkout
+          uses: actions/checkout@v3
+
+        - name: NPM
+          uses: '.github/actions/npm_test'
+          with:
+            node_version: ${{ matrix.node-version }}
+            run_tests: ${{ inputs.run_tests }}
+
+        # - name: Use Node.js ${{ matrix.node-version }}
+        #   uses: actions/setup-node@v3
+        #   with:
+        #       node-version: ${{ matrix.node-version }}
+
+        # - name: Install Dependencies
+        #   run: npm ci
+
+        # - name: Run lint
+        #   run: npm run lint
+
+        # - name: Run tests
+        #   if: ${{ inputs.run_tests }}
+        #   run: npm run test
