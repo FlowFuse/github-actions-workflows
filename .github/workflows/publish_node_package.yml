@@ -74,7 +74,7 @@ jobs:
       - name: "Set package version"
         working-directory: ${{ inputs.working_directory }}
         run: |
-          npm version prerelease --preid `git rev-parse --short HEAD`-`date +%Y%m%d` --no-git-tag-version
+          npm version prerelease --preid `git rev-parse --short HEAD`-`date +%Y%m%d%H%M` --no-git-tag-version
 
       - name: Set dependecies versions
         if: ${{ inputs.package_dependencies != '' }}
