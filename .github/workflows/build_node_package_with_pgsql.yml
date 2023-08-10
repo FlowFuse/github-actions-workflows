@@ -32,12 +32,6 @@ jobs:
         - name: Checkout
           uses: actions/checkout@v3
 
-        - name: Checkout npm_test action
-          uses: actions/checkout@v3
-          with:
-            repository: flowforge/github-actions-workflows
-            path: './github-actions-workflows/actions/npm_test'
-
         - name: NPM
           uses: 'flowforge/github-actions-workflows/actions/npm_test@feat-build-with-pgsql'
           with:
