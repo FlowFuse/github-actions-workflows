@@ -1,0 +1,33 @@
+name: "Run npm test"
+description: "Run npm ci, lint and test"
+
+inputs:
+  run_tests:
+    description: 'Define if npm tests shoule be executed'
+    required: false
+    default: 'true'
+  node_version:
+    description: 'Node version to use'
+    required: false
+    default: '16.x'
+
+runs:
+  using: composite
+  steps:
+    - name: Use Node.js ${{ inputs.node_version }}
+      uses: actions/setup-node@v3
+      with:
+          node-version: ${{ inputs.node_version }}
+
+    - name: Install Dependencies
+      shell: bash
+      run: npm ci
+
+    - name: Run lint
+      shell: bash
+      run: npm run lint
+
+    - name: Run tests
+      if: ${{ inputs.run_tests }}
+      shell: bash
+      run: npm run test
