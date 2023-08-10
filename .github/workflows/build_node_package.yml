@@ -19,17 +19,8 @@ jobs:
         - name: Checkout
           uses: actions/checkout@v3
 
-        - name: Use Node.js ${{ matrix.node-version }}
-          uses: actions/setup-node@v3
+        - name: NPM
+          uses: 'flowforge/github-actions-workflows/actions/npm_test@main'
           with:
-              node-version: ${{ matrix.node-version }}
-
-        - name: Install Dependencies
-          run: npm ci
-
-        - name: Run lint
-          run: npm run lint
-
-        - name: Run tests
-          if: ${{ inputs.run_tests }}
-          run: npm run test
+            node_version: ${{ matrix.node-version }}
+            run_tests: ${{ inputs.run_tests }}
