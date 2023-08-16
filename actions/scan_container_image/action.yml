@@ -1,0 +1,58 @@
+name: 'Scan container image'
+description: 'Scan container image for vulnerabilities with Trivy and publish results'
+
+inputs:
+  image_ref:
+    description: 'Container image ref to scan.'
+    required: true
+  check_name:
+    description: 'A name for the check result.'
+    required: false
+    default: 'Container image scan results'
+  severity:
+    description: 'Severities of security issues to be displayed.'
+    required: false
+    default: 'CRITICAL,HIGH,MEDIUM'
+  security_checks:
+    description: 'Comma-separated list of what security issues to detect (vuln,secret,config).'
+    required: false
+    default: 'vuln,config,secret'
+  soft_fail:
+    description: 'Specify if scanning soft fail is enabled.'
+    required: false
+    default: 'true'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set variables
+      shell: bash
+      run: |
+        if [[ ${{ inputs.soft_fail  == 'true'} } ]] ; then
+          echo "trivy_exit_code=0" >> $GITHUB_ENV
+        else
+          echo "trivy_exit_code=0" >> $GITHUB_ENV
+        fi
+
+    - name: Scan container image for vulnerabilities
+      uses: aquasecurity/trivy-action@0.11
+      with:
+        image-ref: '${{ inputs.image_ref }}'
+        format: 'template'
+        template: '@/contrib/junit.tpl'
+        output: 'trivy-junit-results.xml'
+        exit-code: '${{ env.trivy_exit_code }}'
+        ignore-unfixed: true
+        vuln-type: 'os,library'
+        severity: '${{ inputs.severity }}'
+        security-checks: '${{ inputs.security_checks }}'
+
+    - name: Publish scan results
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      if: always()
+      with:
+        check_name: '${{ inputs.check_name }}'
+        fail_on: 'nothing'
+        report_individual_runs: true
+        files: |
+          trivy-junit-results.xml
