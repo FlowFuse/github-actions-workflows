@@ -3,15 +3,15 @@ name: Build container image
 on:
   workflow_call:
     inputs:
+      image_name:
+        description: 'Name of the image to build'
+        required: true
+        type: string
       package_dependencies:
         description: 'List of dependencies to update'
         type: string
         required: false
         default: ''
-      registry_name:
-        description: 'Name of the registry to push the image to'
-        type: string
-        required: true
       build_context:
         description: 'Path to the build context'
         type: string
@@ -56,6 +56,7 @@ jobs:
         run: | 
           echo "release_name=nightly" >> $GITHUB_ENV
           echo "image_tag=nightly-$(date +%Y%m%d%H%m%S)" >> $GITHUB_ENV
+          echo "registry_name=693616439937.dkr.ecr.eu-west-1.amazonaws.com" >> $GITHUB_ENV
 
       - name: Set dependecies versions
         if: ${{ inputs.package_dependencies != '' }}
@@ -74,7 +75,7 @@ jobs:
         with:
           context: ${{ inputs.build_context }}
           file: "${{ inputs.build_context }}/${{ inputs.dockerfile_path }}}"
-          tags: "${{ inputs.registry_name }}:${{ env.image_tag }}"
+          tags: "${{ env.registry_name }}/flowforge/${{ inputs.image_name }}:${{ env.image_tag }}"
           platforms: ${{ inputs.platforms }}
           build-args: ${{ inputs.build_arguments }}
           load: true
@@ -83,7 +84,7 @@ jobs:
       - name: Scan container image for vulnerabilities
         uses: flowforge/github-actions-workflows/actions/scan-container-image@main
         with:
-          image_ref: "${{ inputs.registry_name }}:${{ env.image_tag }}"
+          image_ref: "${{ env.registry_name }}/flowforge/${{ inputs.image_name }}:${{ env.image_tag }}"
 
       - name: Configure AWS credentials
         if: ${{ env.release_name == 'nightly' }}
@@ -104,7 +105,7 @@ jobs:
         with:
           context: ${{ inputs.build_context }}
           file: "${{ inputs.build_context }}/${{ inputs.dockerfile_path }}}"
-          tags: "${{ inputs.registry_name }}:${{ env.image_tag }}"
+          tags: "${{ env.registry_name }}/flowforge/${{ inputs.image_name }}:${{ env.image_tag }}"
           platforms: ${{ inputs.platforms }}
           build-args: ${{ inputs.build_arguments }}
           push: true
