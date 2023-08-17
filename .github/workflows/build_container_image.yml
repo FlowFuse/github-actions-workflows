@@ -55,8 +55,8 @@ jobs:
       - name: Set release name and image tag
         run: | 
           echo "release_name=nightly" >> $GITHUB_ENV
+          echo "npm_registry=https://npm.pkg.github.com" >> $GITHUB_ENV
           echo "image_tag=nightly-$(date +%Y%m%d%H%m%S)" >> $GITHUB_ENV
-          echo "registry_name=693616439937.dkr.ecr.eu-west-1.amazonaws.com" >> $GITHUB_ENV
 
       - name: Set dependecies versions
         if: ${{ inputs.package_dependencies != '' }}
@@ -75,16 +75,18 @@ jobs:
         with:
           context: ${{ inputs.build_context }}
           file: "${{ inputs.build_context }}/${{ inputs.dockerfile_path }}}"
-          tags: "${{ env.registry_name }}/flowforge/${{ inputs.image_name }}:${{ env.image_tag }}"
+          tags: "${{ secrets.STAGE_CONTAINER_REGISTRY }}/flowforge/${{ inputs.image_name }}:${{ env.image_tag }}"
           platforms: ${{ inputs.platforms }}
-          build-args: ${{ inputs.build_arguments }}
+          build-args: |
+            REGISTRY=${{ env.npm_registry }}
+            REGISTRY_TOKEN=${{ secrets.GITHUB_TOKEN }}
           load: true
           push: false
           
       - name: Scan container image for vulnerabilities
         uses: flowforge/github-actions-workflows/actions/scan-container-image@main
         with:
-          image_ref: "${{ env.registry_name }}/flowforge/${{ inputs.image_name }}:${{ env.image_tag }}"
+          image_ref: "${{ secrets.STAGE_CONTAINER_REGISTRY }}/flowforge/${{ inputs.image_name }}:${{ env.image_tag }}"
 
       - name: Configure AWS credentials
         if: ${{ env.release_name == 'nightly' }}
@@ -105,8 +107,10 @@ jobs:
         with:
           context: ${{ inputs.build_context }}
           file: "${{ inputs.build_context }}/${{ inputs.dockerfile_path }}}"
-          tags: "${{ env.registry_name }}/flowforge/${{ inputs.image_name }}:${{ env.image_tag }}"
+          tags: "${{ secrets.STAGE_CONTAINER_REGISTRY }}/flowforge/${{ inputs.image_name }}:${{ env.image_tag }}"
           platforms: ${{ inputs.platforms }}
-          build-args: ${{ inputs.build_arguments }}
+          build-args: |
+            REGISTRY=${{ env.npm_registry }}
+            REGISTRY_TOKEN=${{ secrets.GITHUB_TOKEN }}
           push: true
       
