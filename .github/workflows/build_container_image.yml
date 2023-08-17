@@ -16,11 +16,6 @@ on:
         description: 'Path to the build context'
         type: string
         required: true
-      build_arguments:
-        description: 'Build arguments to pass to the image build step'
-        type: string
-        required: false
-        default: ''
       build_platforms:
           description: 'Platforms to build the image for'
           type: string
