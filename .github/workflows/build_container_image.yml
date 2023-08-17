@@ -33,6 +33,9 @@ on:
         type: string
         required: false
         default: 'Dockerfile'
+      push_image:
+        type: boolean
+        default: true
       
       
 
@@ -96,6 +99,7 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v1
       
       - name: Push container image
+        if: ${{ inputs.push_image == true }}
         uses: docker/build-push-action@v4
         with:
           context: ${{ inputs.build_context }}
