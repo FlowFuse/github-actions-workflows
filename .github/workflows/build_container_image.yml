@@ -67,7 +67,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: ${{ inputs.build_context }}
-          file: "${{ inputs.build_context }}/${{ inputs.dockerfile_path }}}"
+          file: "${{ inputs.build_context }}/${{ inputs.dockerfile_path }}"
           tags: "${{ inputs.image_name }}:${{ env.image_tag }}"
           platforms: ${{ inputs.platforms }}
           build-args: |
