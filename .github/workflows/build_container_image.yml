@@ -79,7 +79,7 @@ jobs:
           push: false
           
       - name: Scan container image for vulnerabilities
-        uses: flowforge/github-actions-workflows/actions/scan_container_image@main
+        uses: flowforge/github-actions-workflows/actions/scan_container_image@feat-container-build
         with:
           image_ref: "${{ secrets.STAGE_CONTAINER_REGISTRY }}/flowforge/${{ inputs.image_name }}:${{ env.image_tag }}"
 
