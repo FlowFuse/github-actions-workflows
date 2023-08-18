@@ -31,8 +31,6 @@ on:
       push_image:
         type: boolean
         default: true
-      
-      
 
 jobs:
   container:
@@ -55,7 +53,7 @@ jobs:
 
       - name: Set dependecies versions
         if: ${{ inputs.package_dependencies != '' }}
-        working-directory: ${{ inputs.working_directory }}
+        working-directory: ${{ inputs.build_context }}
         run: |
           for dependency in $(echo "${{ inputs.package_dependencies }}" | tr '\n' ' ')
           do
@@ -70,7 +68,7 @@ jobs:
         with:
           context: ${{ inputs.build_context }}
           file: "${{ inputs.build_context }}/${{ inputs.dockerfile_path }}}"
-          tags: "${{ secrets.STAGE_CONTAINER_REGISTRY }}/flowforge/${{ inputs.image_name }}:${{ env.image_tag }}"
+          tags: "${{ inputs.image_name }}:${{ env.image_tag }}"
           platforms: ${{ inputs.platforms }}
           build-args: |
             REGISTRY=${{ env.npm_registry }}
@@ -81,31 +79,17 @@ jobs:
       - name: Scan container image for vulnerabilities
         uses: flowforge/github-actions-workflows/actions/scan_container_image@main
         with:
-          image_ref: "${{ secrets.STAGE_CONTAINER_REGISTRY }}/flowforge/${{ inputs.image_name }}:${{ env.image_tag }}"
+          image_ref: "${{ inputs.image_name }}:${{ env.image_tag }}"
 
-      - name: Configure AWS credentials
-        if: ${{ env.release_name == 'nightly' }}
-        uses: aws-actions/configure-aws-credentials@v2
+      - name: Save and gzip container image
+        run: |
+          docker save --output "${{ github.workspace }}/${{ inputs.image_name }}.image.tar" "${{ inputs.image_name }}:${{ env.image_tag }}"
+          gzip "${{ github.workspace }}/${{ inputs.serviceName }}.image.tar"
+
+      - name: Publish container image as artifact
+        if: ${{ github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' }}
+        uses: actions/upload-artifact@v3.1.2
         with:
-          aws-access-key-id: ${{ secrets.STAGING_AWS_ID }}
-          aws-secret-access-key: ${{ secrets.STAGING_AWS_KEY }}
-          aws-region: eu-west-1
-  
-      - name: "Login to Staging ECR"
-        if: ${{ env.release_name == 'nightly' }}
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
-      
-      - name: Push container image
-        if: ${{ inputs.push_image == true }}
-        uses: docker/build-push-action@v4
-        with:
-          context: ${{ inputs.build_context }}
-          file: "${{ inputs.build_context }}/${{ inputs.dockerfile_path }}}"
-          tags: "${{ secrets.STAGE_CONTAINER_REGISTRY }}/flowforge/${{ inputs.image_name }}:${{ env.image_tag }}"
-          platforms: ${{ inputs.platforms }}
-          build-args: |
-            REGISTRY=${{ env.npm_registry }}
-            REGISTRY_TOKEN=${{ secrets.GITHUB_TOKEN }}
-          push: true
+          name: ${{ inputs.image_name }}
+          path: "${{ github.workspace }}/${{ inputs.image_name }}.image.tar.gz"
       
