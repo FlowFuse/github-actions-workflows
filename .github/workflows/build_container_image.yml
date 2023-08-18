@@ -73,7 +73,6 @@ jobs:
           build-args: |
             REGISTRY=${{ env.npm_registry }}
             REGISTRY_TOKEN=${{ secrets.GITHUB_TOKEN }}
-          load: true
           push: false
           
       - name: Scan container image for vulnerabilities
