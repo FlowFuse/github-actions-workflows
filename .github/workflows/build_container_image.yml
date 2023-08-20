@@ -28,6 +28,11 @@ on:
         type: string
         required: false
         default: 'Dockerfile'
+      npm_registry_url:
+        description: 'NPM registry URL'
+        type: string
+        required: false
+        default: registry.npmjs.org
       push_image:
         type: boolean
         default: true
@@ -55,7 +60,6 @@ jobs:
       - name: Set release name and image tag
         run: | 
           echo "release_name=nightly" >> $GITHUB_ENV
-          echo "npm_registry=https://npm.pkg.github.com" >> $GITHUB_ENV
           echo "image_tag=nightly-$(date +%Y%m%d%H%m%S)" >> $GITHUB_ENV
 
       - name: Set dependecies versions
@@ -78,7 +82,7 @@ jobs:
           tags: "${{ inputs.image_name }}:${{ env.image_tag }}"
           platforms: ${{ inputs.build_platforms }}
           build-args: |
-            REGISTRY=${{ env.npm_registry }}
+            REGISTRY=${{ inputs.npm_registry_url }}
             REGISTRY_TOKEN=${{ secrets.npm_registry_auth_token }}
           push: false
           
