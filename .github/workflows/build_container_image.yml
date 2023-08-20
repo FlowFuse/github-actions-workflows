@@ -85,6 +85,7 @@ jobs:
             REGISTRY=${{ inputs.npm_registry_url }}
             REGISTRY_TOKEN=${{ secrets.npm_registry_auth_token }}
           push: false
+          load: true
 
       - name: Debug docker images
         run: |
