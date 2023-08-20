@@ -28,6 +28,10 @@ on:
         type: string
         required: false
         default: 'Dockerfile'
+      npm_registry_auth_token:
+        description: 'NPM authentication token'
+        type: string
+        required: true
       push_image:
         type: boolean
         default: true
@@ -72,7 +76,7 @@ jobs:
           platforms: ${{ inputs.build_platforms }}
           build-args: |
             REGISTRY=${{ env.npm_registry }}
-            REGISTRY_TOKEN=${{ secrets.GITHUB_TOKEN }}
+            REGISTRY_TOKEN=${{ inputs.npm_registry_auth_token }}
           push: false
           
       - name: Scan container image for vulnerabilities
