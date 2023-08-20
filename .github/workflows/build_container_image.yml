@@ -39,6 +39,8 @@ on:
 jobs:
   container:
     runs-on: ubuntu-latest
+    permissions:
+      packages: read
     steps:
       - name: Checkout
         uses: actions/checkout@v3
