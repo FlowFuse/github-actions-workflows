@@ -84,7 +84,11 @@ jobs:
           build-args: |
             REGISTRY=${{ inputs.npm_registry_url }}
             REGISTRY_TOKEN=${{ secrets.npm_registry_auth_token }}
-          push: true
+          push: false
+
+      - name: Debug docker images
+        run: |
+          docker images
           
       - name: Scan container image for vulnerabilities
         uses: flowforge/github-actions-workflows/actions/scan_container_image@main
