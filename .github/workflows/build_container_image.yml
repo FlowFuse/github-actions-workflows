@@ -12,6 +12,11 @@ on:
         description: 'Name of the image to build'
         required: true
         type: string
+      image_tag_prefix:
+        description: 'Prefix for the image tag'
+        required: false
+        type: string
+        default: ''
       package_dependencies:
         description: 'List of dependencies to update'
         type: string
@@ -113,7 +118,21 @@ jobs:
         uses: docker/metadata-action@v3
         with:
           tags: |
-            type=raw,value=${{ env.release_name }}
+            type=raw,prefix=${{ inputs.image_tag_prefix }},value=${{ env.release_name }}
+          flavor: |
+            latest=false
+          images: |
+            ${{ steps.private_registry.outputs.registry }}/flowforge/${{ inputs.image_name }}
+
+      - name: Debug image metadata
+        if: ${{ inputs.environment == 'stage' }}
+        uses: docker/metadata-action@v3
+        with:
+          tags: |
+            type=raw,prefix=${{ inputs.image_tag_prefix }},value=${{ env.release_name }}
+            type=schedule,pattern=nightly
+            type=schedule,pattern=nightly-{{date 'YYYYMMDDHHmmss'}}
+            type=sha
           flavor: |
             latest=false
           images: |
