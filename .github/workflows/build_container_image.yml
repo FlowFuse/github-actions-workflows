@@ -86,12 +86,13 @@ jobs:
         run: | 
           echo "release_name=nightly" >> $GITHUB_ENV
           echo "image_tag=nightly-$(date +%Y%m%d%H%m%S)" >> $GITHUB_ENV
+          echo $GITHUB_ENV
           if [ $release_name == 'nightly' ]; then
             echo "build_tag=nightly" >> $GITHUB_ENV
           else
             echo "build_tag=latest" >> $GITHUB_ENV
           fi
-          echo $GITHUB_ENV
+          
 
       - name: Set dependecies versions
         if: ${{ inputs.package_dependencies != '' }}
