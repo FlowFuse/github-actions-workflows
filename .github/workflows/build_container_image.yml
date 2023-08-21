@@ -91,6 +91,7 @@ jobs:
           else
             echo "build_tag=latest" >> $GITHUB_ENV
           fi
+          echo $release_name
 
       - name: Set dependecies versions
         if: ${{ inputs.package_dependencies != '' }}
