@@ -38,6 +38,10 @@ on:
         type: string
         required: false
         default: registry.npmjs.org
+      aws_access_key_id:
+        description: 'AWS access key ID'
+        type: string
+        required: false
       scan_image:
         description: 'Scan the image for vulnerabilities'
         type: boolean
@@ -46,6 +50,15 @@ on:
       npm_registry_auth_token:
         description: 'NPM registry authentication token'
         required: true
+      aws_access_key_id:
+        description: 'AWS access key ID'
+        required: false
+      aws_access_key_secret:
+        description: 'AWS access key secret'
+        required: false
+      docker_hub_secret:
+        description: 'Docker Hub password'
+        required: false
 
 jobs:
   container:
@@ -84,8 +97,8 @@ jobs:
         if: ${{ inputs.environment == 'stage' }}
         uses: aws-actions/configure-aws-credentials@v1-node16
         with:
-          aws-access-key-id: ${{ secrets.STAGING_AWS_ID }}
-          aws-secret-access-key: ${{ secrets.STAGING_AWS_KEY }}
+          aws-access-key-id: ${{ secrets.aws_access_key_id }}
+          aws-secret-access-key: ${{ secrets.aws_access_key_secret }}
           aws-region: eu-west-1
 
       - name: Login to private container registry
@@ -135,7 +148,7 @@ jobs:
         uses: docker/login-action@v1
         with:
           username: flowforge
-          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+          password: ${{ secrets.docker_hub_secret }}
           
       - name: Scan container image for vulnerabilities
         if: ${{ inputs.scan_image == true }}
