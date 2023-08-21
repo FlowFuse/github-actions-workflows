@@ -3,6 +3,11 @@ name: Build container image
 on:
   workflow_call:
     inputs:
+      environment:
+        description: 'Environment to build the image for'
+        required: true
+        type: string
+        default: 'stage'
       image_name:
         description: 'Name of the image to build'
         required: true
@@ -74,34 +79,67 @@ jobs:
             mv package.json-patched package.json
           done
           cat package.json
+
+      - name: Configure AWS credentials
+        if: ${{ inputs.environment == 'stage' }}
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          aws-access-key-id: ${{ secrets.STAGING_AWS_ID }}
+          aws-secret-access-key: ${{ secrets.STAGING_AWS_KEY }}
+          aws-region: eu-west-1
+
+      - name: Login to private container registry
+        if: ${{ inputs.environment == 'stage' }}
+        id: private_registry
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Get private image metadata
+        if: ${{ inputs.environment == 'stage' }}
+        id: private_image_metadata
+        uses: docker/metadata-action@v3
+        with:
+          tags: |
+            type=raw,value=${{ env.release_name }}
+          flavor: |
+            latest=false
+          images: |
+            ${{ steps.private_registry.outputs.registry }}/flowforge/${{ inputs.image_name }}
       
-      - name: Build container image
+      - name: Build private container image
+        if: ${{ inputs.environment == 'stage' }}
         uses: docker/build-push-action@v4
         with:
           context: ${{ inputs.build_context }}
           file: "${{ inputs.build_context }}/${{ inputs.dockerfile_path }}"
-          tags: "${{ inputs.image_name }}:${{ env.image_tag }}"
+          tags: "${{ steps.private_image_metadata.outputs.tags }}"
           platforms: ${{ inputs.build_platforms }}
           build-args: |
             REGISTRY=${{ inputs.npm_registry_url }}
             REGISTRY_TOKEN=${{ secrets.npm_registry_auth_token }}
+          push: true
+
+      - name: Get public image metadata
+        if: ${{ inputs.environment == 'production' }}
+        id: public_image_metadata
+        uses: docker/metadata-action@v3
+        with:
+          tags: |
+            type=semver,event=tag,pattern={{version}}
+          flavor: |
+            latest=true
+          images: |
+            flowforge/${{ inputs.image_name }}
+
+      - name: Login to public container registry
+        if: ${{ inputs.environment == 'production' }}
+        uses: docker/login-action@v1
+        with:
+          username: flowforge
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
           
       - name: Scan container image for vulnerabilities
         if: ${{ inputs.scan_image == true }}
         uses: flowforge/github-actions-workflows/actions/scan_container_image@main
         with:
           image_ref: "${{ inputs.image_name }}:${{ env.image_tag }}"
-
-      - name: Save and gzip container image
-        run: |
-          docker save --output "${{ github.workspace }}/${{ inputs.image_name }}.image.tar" "${{ inputs.image_name }}:${{ env.image_tag }}"
-          gzip "${{ github.workspace }}/${{ inputs.serviceName }}.image.tar"
-
-      - name: Publish container image as artifact
-        if: ${{ github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' }}
-        uses: actions/upload-artifact@v3.1.2
-        with:
-          name: ${{ inputs.image_name }}
-          path: "${{ github.workspace }}/${{ inputs.image_name }}.image.tar.gz"
-          retention-days: 3
       
