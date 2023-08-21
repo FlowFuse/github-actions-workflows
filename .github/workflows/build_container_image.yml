@@ -82,10 +82,15 @@ jobs:
       - name: Setup Docker buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Set release name and image tag
+      - name: Set variables
         run: | 
           echo "release_name=nightly" >> $GITHUB_ENV
           echo "image_tag=nightly-$(date +%Y%m%d%H%m%S)" >> $GITHUB_ENV
+          if [ $release_name == 'nightly' ]; then
+            echo "build_tag=nightly" >> $GITHUB_ENV
+          else
+            echo "build_tag=latest" >> $GITHUB_ENV
+          fi
 
       - name: Set dependecies versions
         if: ${{ inputs.package_dependencies != '' }}
@@ -151,6 +156,7 @@ jobs:
           build-args: |
             REGISTRY=${{ inputs.npm_registry_url }}
             REGISTRY_TOKEN=${{ secrets.npm_registry_auth_token }}
+            BUILD_TAG=${{ env.build_tag }}
           push: false
 
       - name: Get public image metadata
