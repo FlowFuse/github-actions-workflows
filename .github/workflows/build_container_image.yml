@@ -134,20 +134,6 @@ jobs:
             latest=false
           images: |
             ${{ steps.private_registry.outputs.registry }}/flowforge/${{ inputs.image_name }}
-
-      - name: Debug image metadata
-        if: ${{ inputs.environment == 'stage' }}
-        uses: docker/metadata-action@v3
-        with:
-          tags: |
-            type=raw,prefix=${{ inputs.image_tag_prefix }},value=${{ env.release_name }}
-            type=schedule,pattern=nightly
-            type=schedule,pattern=nightly-{{date 'YYYYMMDDHHmmss'}}
-            type=sha
-          flavor: |
-            latest=false
-          images: |
-            ${{ steps.private_registry.outputs.registry }}/flowforge/${{ inputs.image_name }}
       
       - name: Build private container image
         if: ${{ inputs.environment == 'stage' }}
