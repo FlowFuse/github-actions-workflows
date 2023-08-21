@@ -103,4 +103,5 @@ jobs:
         with:
           name: ${{ inputs.image_name }}
           path: "${{ github.workspace }}/${{ inputs.image_name }}.image.tar.gz"
+          retention-days: 3
       
