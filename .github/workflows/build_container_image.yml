@@ -63,6 +63,7 @@ on:
 jobs:
   container:
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
     permissions:
       packages: read
       contents: read
@@ -124,7 +125,9 @@ jobs:
         with:
           context: ${{ inputs.build_context }}
           file: "${{ inputs.build_context }}/${{ inputs.dockerfile_path }}"
-          tags: "${{ steps.private_image_metadata.outputs.tags }}"
+          tags: | 
+            ${{ steps.private_image_metadata.outputs.tags }}"
+            flowforge/${{ inputs.image_name }}:${{ env.image_tag }}"
           platforms: ${{ inputs.build_platforms }}
           build-args: |
             REGISTRY=${{ inputs.npm_registry_url }}
