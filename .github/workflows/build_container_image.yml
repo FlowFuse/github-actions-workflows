@@ -37,9 +37,6 @@ on:
         description: 'Scan the image for vulnerabilities'
         type: boolean
         default: false
-      push_image:
-        type: boolean
-        default: true
     secrets:
       npm_registry_auth_token:
         description: 'NPM registry authentication token'
@@ -88,8 +85,6 @@ jobs:
           build-args: |
             REGISTRY=${{ inputs.npm_registry_url }}
             REGISTRY_TOKEN=${{ secrets.npm_registry_auth_token }}
-          push: false
-          load: true
           
       - name: Scan container image for vulnerabilities
         if: ${{ inputs.scan_image == true }}
