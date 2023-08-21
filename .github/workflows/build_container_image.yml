@@ -125,7 +125,7 @@ jobs:
         with:
           context: ${{ inputs.build_context }}
           file: "${{ inputs.build_context }}/${{ inputs.dockerfile_path }}"
-          tags: |- 
+          tags: >- 
             ${{ steps.private_image_metadata.outputs.tags }}"
             flowforge/${{ inputs.image_name }}:${{ env.image_tag }}"
           platforms: ${{ inputs.build_platforms }}
