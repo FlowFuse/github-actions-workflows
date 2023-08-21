@@ -93,9 +93,9 @@ jobs:
           inputs.image_name == 'node-red'
         run:
           if [ "${{ env.release_name }}" == "nightly" ]; then
-            echo "build_tag=nightly" >> $GITHUB_ENV
+            echo "build_tag=nightly" >> $GITHUB_ENV ;
           else
-            echo "build_tag=latest" >> $GITHUB_ENV
+            echo "build_tag=latest" >> $GITHUB_ENV ;
           fi
 
       - name: Set dependecies versions
