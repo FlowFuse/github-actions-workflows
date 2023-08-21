@@ -92,7 +92,7 @@ jobs:
           env.release_name == 'nightly' &&
           inputs.image_name == 'node-red'
         run:
-          if [ ${{ env.release_name }} == 'nightly' ]; then
+          if [ "${{ env.release_name }}" == "nightly" ]; then
             echo "build_tag=nightly" >> $GITHUB_ENV
           else
             echo "build_tag=latest" >> $GITHUB_ENV
