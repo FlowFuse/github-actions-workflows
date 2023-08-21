@@ -33,6 +33,10 @@ on:
         type: string
         required: false
         default: registry.npmjs.org
+      scan_image:
+        description: 'Scan the image for vulnerabilities'
+        type: boolean
+        default: false
       push_image:
         type: boolean
         default: true
@@ -88,6 +92,7 @@ jobs:
           load: true
           
       - name: Scan container image for vulnerabilities
+        if: ${{ inputs.scan_image == true }}
         uses: flowforge/github-actions-workflows/actions/scan_container_image@main
         with:
           image_ref: "${{ inputs.image_name }}:${{ env.image_tag }}"
