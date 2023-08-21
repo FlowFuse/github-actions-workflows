@@ -163,7 +163,7 @@ jobs:
             REGISTRY=${{ inputs.npm_registry_url }}
             REGISTRY_TOKEN=${{ secrets.npm_registry_auth_token }}
             BUILD_TAG=${{ env.build_tag }}
-          push: false
+          push: true
 
       - name: Get public image metadata
         if: ${{ inputs.environment == 'production' }}
