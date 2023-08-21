@@ -27,12 +27,12 @@ on:
         type: string
         required: true
       build_platforms:
-          description: 'Platforms to build the image for'
-          type: string
-          required: false
-          default: |- 
-            linux/amd64
-            linux/arm64
+        description: 'Platforms to build the image for'
+        type: string
+        required: false
+        default: |- 
+          linux/amd64
+          linux/arm64
       dockerfile_path:
         description: 'Path to the Dockerfile, within $build_context, used for image build'
         type: string
