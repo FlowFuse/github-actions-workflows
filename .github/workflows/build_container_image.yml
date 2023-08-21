@@ -126,8 +126,8 @@ jobs:
           context: ${{ inputs.build_context }}
           file: "${{ inputs.build_context }}/${{ inputs.dockerfile_path }}"
           tags: >- 
-            ${{ steps.private_image_metadata.outputs.tags }}"
-            flowforge/${{ inputs.image_name }}:${{ env.image_tag }}"
+            ${{ steps.private_image_metadata.outputs.tags }}
+            "flowforge/${{ inputs.image_name }}:${{ env.image_tag }}"
           platforms: ${{ inputs.build_platforms }}
           build-args: |
             REGISTRY=${{ inputs.npm_registry_url }}
