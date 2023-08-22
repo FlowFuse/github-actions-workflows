@@ -1,0 +1,178 @@
+name: Build container image
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: 'Environment to build the image for'
+        required: true
+        type: string
+        default: 'stage'
+      image_name:
+        description: 'Name of the image to build'
+        required: true
+        type: string
+      image_tag_prefix:
+        description: 'Prefix for the image tag'
+        required: false
+        type: string
+        default: ''
+      package_dependencies:
+        description: 'List of dependencies to update'
+        type: string
+        required: false
+        default: ''
+      build_context:
+        description: 'Path to the build context'
+        type: string
+        required: true
+      build_platforms:
+        description: 'Platforms to build the image for'
+        type: string
+        required: false
+        default: |- 
+          linux/amd64
+          linux/arm64
+      dockerfile_path:
+        description: 'Path to the Dockerfile, within $build_context, used for image build'
+        type: string
+        required: false
+        default: 'Dockerfile'
+      npm_registry_url:
+        description: 'NPM registry URL'
+        type: string
+        required: false
+        default: registry.npmjs.org
+      aws_access_key_id:
+        description: 'AWS access key ID'
+        type: string
+        required: false
+      scan_image:
+        description: 'Scan the image for vulnerabilities'
+        type: boolean
+        default: false
+    secrets:
+      npm_registry_auth_token:
+        description: 'NPM registry authentication token'
+        required: true
+      aws_access_key_id:
+        description: 'AWS access key ID'
+        required: false
+      aws_access_key_secret:
+        description: 'AWS access key secret'
+        required: false
+      docker_hub_secret:
+        description: 'Docker Hub password'
+        required: false
+
+jobs:
+  container:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    permissions:
+      packages: read
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Setup Docker buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Set release name and image tag
+        run: | 
+          echo "release_name=nightly" >> $GITHUB_ENV
+          echo "image_tag=nightly-$(date +%Y%m%d%H%m%S)" >> $GITHUB_ENV
+          
+      - name: Set build tag
+        if: |
+          env.release_name == 'nightly' &&
+          inputs.image_name == 'node-red'
+        run:
+          if [ "${{ env.release_name }}" == "nightly" ]; then
+            echo "build_tag=nightly" >> $GITHUB_ENV ;
+          else
+            echo "build_tag=latest" >> $GITHUB_ENV ;
+          fi
+
+      - name: Set dependecies versions
+        if: ${{ inputs.package_dependencies != '' }}
+        working-directory: ${{ inputs.build_context }}
+        run: |
+          for dependency in $(echo "${{ inputs.package_dependencies }}" | tr '\n' ' ')
+          do
+            echo "Updating $dependency to ${{ env.release_name }}"
+            cat package.json | jq ".dependencies[\"$dependency\"] = \"${{ env.release_name }}\"" > package.json-patched
+            mv package.json-patched package.json
+          done
+          cat package.json
+
+      - name: Configure AWS credentials
+        if: ${{ inputs.environment == 'stage' }}
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          aws-access-key-id: ${{ secrets.aws_access_key_id }}
+          aws-secret-access-key: ${{ secrets.aws_access_key_secret }}
+          aws-region: eu-west-1
+
+      - name: Login to private container registry
+        if: ${{ inputs.environment == 'stage' }}
+        id: private_registry
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Get private image metadata
+        if: ${{ inputs.environment == 'stage' }}
+        id: private_image_metadata
+        uses: docker/metadata-action@v3
+        with:
+          tags: |
+            type=raw,prefix=${{ inputs.image_tag_prefix }},value=${{ env.release_name }}
+          flavor: |
+            latest=false
+          images: |
+            ${{ steps.private_registry.outputs.registry }}/flowforge/${{ inputs.image_name }}
+      
+      - name: Build private container image
+        if: ${{ inputs.environment == 'stage' }}
+        uses: docker/build-push-action@v4
+        with:
+          context: ${{ inputs.build_context }}
+          file: "${{ inputs.build_context }}/${{ inputs.dockerfile_path }}"
+          tags: | 
+            ${{ steps.private_image_metadata.outputs.tags }}
+            "${{ steps.private_registry.outputs.registry }}/flowforge/${{ inputs.image_name }}:${{ env.image_tag }}"
+          platforms: ${{ inputs.build_platforms }}
+          build-args: |
+            REGISTRY=${{ inputs.npm_registry_url }}
+            REGISTRY_TOKEN=${{ secrets.npm_registry_auth_token }}
+            BUILD_TAG=${{ env.build_tag }}
+          push: true
+
+      - name: Get public image metadata
+        if: ${{ inputs.environment == 'production' }}
+        id: public_image_metadata
+        uses: docker/metadata-action@v3
+        with:
+          tags: |
+            type=semver,event=tag,pattern={{version}}
+          flavor: |
+            latest=true
+          images: |
+            flowforge/${{ inputs.image_name }}
+
+      - name: Login to public container registry
+        if: ${{ inputs.environment == 'production' }}
+        uses: docker/login-action@v1
+        with:
+          username: flowforge
+          password: ${{ secrets.docker_hub_secret }}
+          
+      - name: Scan container image for vulnerabilities
+        if: ${{ inputs.scan_image == true }}
+        uses: flowforge/github-actions-workflows/actions/scan_container_image@main
+        with:
+          image_ref: "${{ inputs.image_name }}:${{ env.image_tag }}"
+      
