@@ -183,5 +183,6 @@ jobs:
           image_ref: "${{ inputs.image_name }}:${{ env.image_tag }}"
   
       - name: Set job outputs
+        if: ${{ inputs.environment == 'stage' }}
         run: |
-          echo "private_image_tag"="${{ env.image_tag }}" >> $GITHUB_OUTPUTS
+          echo "private_image_tag=${{ steps.private_registry.outputs.registry }}/flowforge/${{ inputs.image_name }}:${{ env.image_tag }}" >> $GITHUB_OUTPUTS
