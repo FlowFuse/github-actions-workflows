@@ -64,6 +64,10 @@ on:
       docker_hub_secret:
         description: 'Docker Hub password'
         required: false
+    outputs:
+      image_tag:
+        description: 'Unique image tag'
+        value: ${{ jobs.container.outputs.image_tag }}
 
 jobs:
   container:
@@ -72,6 +76,8 @@ jobs:
     permissions:
       packages: read
       contents: read
+    outputs:
+      image_tag: ${{ steps.set_outputs.outputs.image_tag }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -175,4 +181,7 @@ jobs:
         uses: flowforge/github-actions-workflows/actions/scan_container_image@main
         with:
           image_ref: "${{ inputs.image_name }}:${{ env.image_tag }}"
-      
+  
+      - name: Set job outputs
+        run: |
+          echo "image_tag"="${{ env.image_tag }}" >> $GITHUB_OUTPUTS
