@@ -65,9 +65,9 @@ on:
         description: 'Docker Hub password'
         required: false
     outputs:
-      private_image_tag:
+      private_image:
         description: 'Private image tag'
-        value: ${{ jobs.container.outputs.private_image_tag }}
+        value: ${{ jobs.container.outputs.private_image }}
 
 jobs:
   container:
@@ -77,7 +77,7 @@ jobs:
       packages: read
       contents: read
     outputs:
-      private_image_tag: ${{ steps.set_outputs.outputs.private_image_tag }}
+      private_image: ${{ steps.set_outputs.outputs.private_image }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -186,4 +186,4 @@ jobs:
         id: set_outputs
         if: ${{ inputs.environment == 'stage' }}
         run: |
-          echo "private_image_tag=${{ steps.private_registry.outputs.registry }}/flowforge/${{ inputs.image_name }}:${{ env.image_tag }}" >> $GITHUB_OUTPUT
+          echo "private_image=${{ inputs.image_name }}:${{ env.image_tag }}" >> $GITHUB_OUTPUT
