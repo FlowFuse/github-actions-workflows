@@ -77,7 +77,7 @@ jobs:
       packages: read
       contents: read
     outputs:
-      private_image_tag: ${{ steps.set_outputs.outputs.private_image_tag }}
+      private_image_tag: ${{ steps.set_outputs.private_image_tag }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
