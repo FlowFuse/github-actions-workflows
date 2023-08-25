@@ -187,7 +187,3 @@ jobs:
         if: ${{ inputs.environment == 'stage' }}
         run: |
           echo "private_image_tag=${{ steps.private_registry.outputs.registry }}/flowforge/${{ inputs.image_name }}:${{ env.image_tag }}" >> $GITHUB_OUTPUT
-
-      - name: Debug outputs
-        run: |
-          echo ${{ steps.set_outputs.outputs.private_image_tag }}
