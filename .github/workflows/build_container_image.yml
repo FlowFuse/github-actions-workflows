@@ -54,16 +54,20 @@ on:
     secrets:
       npm_registry_auth_token:
         description: 'NPM registry authentication token'
-        required: true
+        required: false
       aws_access_key_id:
         description: 'AWS access key ID'
-        required: false
+        required: true
       aws_access_key_secret:
         description: 'AWS access key secret'
-        required: false
+        required: true
       docker_hub_secret:
         description: 'Docker Hub password'
         required: false
+    outputs:
+      image:
+        description: 'Image tag'
+        value: ${{ jobs.container.outputs.image }}
 
 jobs:
   container:
@@ -72,6 +76,8 @@ jobs:
     permissions:
       packages: read
       contents: read
+    outputs:
+      image: ${{ steps.set_outputs.outputs.image }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -111,21 +117,18 @@ jobs:
           cat package.json
 
       - name: Configure AWS credentials
-        if: ${{ inputs.environment == 'stage' }}
         uses: aws-actions/configure-aws-credentials@v1-node16
         with:
           aws-access-key-id: ${{ secrets.aws_access_key_id }}
           aws-secret-access-key: ${{ secrets.aws_access_key_secret }}
           aws-region: eu-west-1
 
-      - name: Login to private container registry
-        if: ${{ inputs.environment == 'stage' }}
-        id: private_registry
+      - name: Login to container registry
+        id: registry
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Get private image metadata
-        if: ${{ inputs.environment == 'stage' }}
-        id: private_image_metadata
+      - name: Get image metadata
+        id: image_metadata
         uses: docker/metadata-action@v3
         with:
           tags: |
@@ -133,46 +136,30 @@ jobs:
           flavor: |
             latest=false
           images: |
-            ${{ steps.private_registry.outputs.registry }}/flowforge/${{ inputs.image_name }}
+            ${{ steps.registry.outputs.registry }}/flowforge/${{ inputs.image_name }}
       
-      - name: Build private container image
-        if: ${{ inputs.environment == 'stage' }}
+      - name: Build container image
         uses: docker/build-push-action@v4
         with:
           context: ${{ inputs.build_context }}
           file: "${{ inputs.build_context }}/${{ inputs.dockerfile_path }}"
           tags: | 
-            ${{ steps.private_image_metadata.outputs.tags }}
-            "${{ steps.private_registry.outputs.registry }}/flowforge/${{ inputs.image_name }}:${{ env.image_tag }}"
+            ${{ steps.image_metadata.outputs.tags }}
+            "${{ steps.registry.outputs.registry }}/flowforge/${{ inputs.image_name }}:${{ env.image_tag }}"
           platforms: ${{ inputs.build_platforms }}
           build-args: |
             REGISTRY=${{ inputs.npm_registry_url }}
             REGISTRY_TOKEN=${{ secrets.npm_registry_auth_token }}
             BUILD_TAG=${{ env.build_tag }}
           push: true
-
-      - name: Get public image metadata
-        if: ${{ inputs.environment == 'production' }}
-        id: public_image_metadata
-        uses: docker/metadata-action@v3
-        with:
-          tags: |
-            type=semver,event=tag,pattern={{version}}
-          flavor: |
-            latest=true
-          images: |
-            flowforge/${{ inputs.image_name }}
-
-      - name: Login to public container registry
-        if: ${{ inputs.environment == 'production' }}
-        uses: docker/login-action@v1
-        with:
-          username: flowforge
-          password: ${{ secrets.docker_hub_secret }}
           
       - name: Scan container image for vulnerabilities
         if: ${{ inputs.scan_image == true }}
         uses: flowforge/github-actions-workflows/actions/scan_container_image@main
         with:
           image_ref: "${{ inputs.image_name }}:${{ env.image_tag }}"
-      
+  
+      - name: Set job outputs
+        id: set_outputs
+        run: |
+          echo "image=${{ inputs.image_name }}:${{ env.image_tag }}" >> $GITHUB_OUTPUT
