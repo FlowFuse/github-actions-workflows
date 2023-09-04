@@ -30,9 +30,7 @@ on:
         description: 'Platforms to build the image for'
         type: string
         required: false
-        default: |- 
-          linux/amd64
-          linux/arm64
+        default: '["linux/amd64","linux/arm64"]'
       dockerfile_path:
         description: 'Path to the Dockerfile, within $build_context, used for image build'
         type: string
@@ -73,6 +71,10 @@ jobs:
   container:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ${{ fromJson(inputs.build_platforms) }}
     permissions:
       packages: read
       contents: read
@@ -146,12 +148,12 @@ jobs:
           tags: | 
             ${{ steps.image_metadata.outputs.tags }}
             "${{ steps.registry.outputs.registry }}/flowforge/${{ inputs.image_name }}:${{ env.image_tag }}"
-          platforms: ${{ inputs.build_platforms }}
+          platforms: ${{ matrix.platform }}
           build-args: |
             REGISTRY=${{ inputs.npm_registry_url }}
             REGISTRY_TOKEN=${{ secrets.npm_registry_auth_token }}
             BUILD_TAG=${{ env.build_tag }}
-          push: true
+          push: false
           
       - name: Scan container image for vulnerabilities
         if: ${{ inputs.scan_image == true }}
