@@ -30,7 +30,10 @@ on:
         description: 'Platforms to build the image for'
         type: string
         required: false
-        default: '["linux/amd64","linux/arm64"]'
+        # default: '["linux/amd64","linux/arm64"]'
+        default: |- 
+          linux/amd64
+          linux/arm64
       dockerfile_path:
         description: 'Path to the Dockerfile, within $build_context, used for image build'
         type: string
@@ -71,10 +74,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
-    strategy:
-      fail-fast: false
-      matrix:
-        platform: ${{ fromJson(inputs.build_platforms) }}
+    # strategy:
+    #   fail-fast: false
+    #   matrix:
+    #     platform: ${{ fromJson(inputs.build_platforms) }}
     permissions:
       packages: read
       contents: read
@@ -139,6 +142,20 @@ jobs:
             latest=false
           images: |
             ${{ steps.registry.outputs.registry }}/flowforge/${{ inputs.image_name }}
+
+      - name: Build and load
+        uses: docker/build-push-action@v4
+        with:
+          context: ${{ inputs.build_context }}
+          file: "${{ inputs.build_context }}/${{ inputs.dockerfile_path }}"
+          tags: "${{ inputs.image_name }}:${{ env.image_tag }}"
+
+      - name: Scan for vulnerabilities
+        id: scan
+        uses: crazy-max/ghaction-container-scan@v2
+        with:
+          image: "${{ inputs.image_name }}:${{ env.image_tag }}"
+          dockerfile: "${{ inputs.build_context }}/${{ inputs.dockerfile_path }}"
       
       - name: Build container image
         id: build
@@ -150,24 +167,19 @@ jobs:
           #   ${{ steps.image_metadata.outputs.tags }}
           #   "${{ steps.registry.outputs.registry }}/flowforge/${{ inputs.image_name }}:${{ env.image_tag }}"
           tags: "${{ inputs.image_name }}:${{ env.image_tag }}"
-          platforms: ${{ matrix.platform }}
+          platforms: ${{ inputs.build_platforms }}
           build-args: |
             REGISTRY=${{ inputs.npm_registry_url }}
             REGISTRY_TOKEN=${{ secrets.npm_registry_auth_token }}
             BUILD_TAG=${{ env.build_tag }}
-          # push: false
-          # outputs: type=image,name=flowforge/${{ inputs.image_name }},push-by-digest=true,name-canonical=true
+          outputs: type=docker,dest=/tmp/image.tar
      
       - name: debug images
         run: | 
           docker images ls
-
-      - name: debug digests
-        run: | 
-          ls -la /tmp/digests
           
       - name: Scan container image for vulnerabilities
-        # if: ${{ inputs.scan_image == true }}
+        if: ${{ inputs.scan_image == true }}
         uses: flowforge/github-actions-workflows/actions/scan_container_image@main
         with:
           image_ref: "${{ inputs.image_name }}:${{ env.image_tag }}"
