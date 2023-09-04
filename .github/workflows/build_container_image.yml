@@ -153,7 +153,7 @@ jobs:
             REGISTRY=${{ inputs.npm_registry_url }}
             REGISTRY_TOKEN=${{ secrets.npm_registry_auth_token }}
             BUILD_TAG=${{ env.build_tag }}
-            outputs: type=docker
+          outputs: type=docker
 
       - name: debug images
         run: | 
@@ -193,6 +193,10 @@ jobs:
         id: set_outputs
         run: |
           echo "image=${{ inputs.image_name }}:${{ env.image_tag }}" >> $GITHUB_OUTPUT
+
+      - name: debug directory
+        run: | 
+          ls -la ${{ github.workspace }}
 
       - name: Compress image archive
         run: gzip ${{ github.workspace }}/${{ inputs.image_name }}.image.tar
