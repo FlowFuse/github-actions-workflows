@@ -144,6 +144,7 @@ jobs:
             ${{ steps.registry.outputs.registry }}/flowforge/${{ inputs.image_name }}
 
       - name: Build and load for scan
+        if: ${{ inputs.scan_image == true }}
         uses: docker/build-push-action@v4
         with:
           context: ${{ inputs.build_context }}
@@ -156,6 +157,7 @@ jobs:
           outputs: type=docker
 
       - name: Scan for vulnerabilities
+        if: ${{ inputs.scan_image == true }}
         id: scan
         uses: crazy-max/ghaction-container-scan@v2
         with:
