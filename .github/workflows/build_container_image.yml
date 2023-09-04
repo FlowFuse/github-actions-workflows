@@ -68,7 +68,7 @@ on:
         value: ${{ jobs.container.outputs.image }}
 
 jobs:
-  container:
+  build:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     strategy:
@@ -141,6 +141,7 @@ jobs:
             ${{ steps.registry.outputs.registry }}/flowforge/${{ inputs.image_name }}
       
       - name: Build container image
+        id: build
         uses: docker/build-push-action@v4
         with:
           context: ${{ inputs.build_context }}
@@ -154,10 +155,29 @@ jobs:
             REGISTRY_TOKEN=${{ secrets.npm_registry_auth_token }}
             BUILD_TAG=${{ env.build_tag }}
           push: false
-          load: true
+          outputs: type=image,name=flowforge/${{ inputs.image_name }},push-by-digest=true,name-canonical=true,push=true
 
-      - name: debug
-        run: docker images ls
+      - name: Export digest
+        run: |
+          mkdir -p /tmp/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}"          
+      
+      - name: Upload digest
+        uses: actions/upload-artifact@v3
+        with:
+          name: digests
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+     
+      - name: debug images
+        run: | 
+          docker images ls
+
+      - name: debug digests
+        run: | 
+          ls -la /tmp/digests
           
       - name: Scan container image for vulnerabilities
         if: ${{ inputs.scan_image == true }}
@@ -169,3 +189,4 @@ jobs:
         id: set_outputs
         run: |
           echo "image=${{ inputs.image_name }}:${{ env.image_tag }}" >> $GITHUB_OUTPUT
+        
