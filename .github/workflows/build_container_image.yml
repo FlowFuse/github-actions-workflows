@@ -149,6 +149,10 @@ jobs:
           context: ${{ inputs.build_context }}
           file: "${{ inputs.build_context }}/${{ inputs.dockerfile_path }}"
           tags: "${{ inputs.image_name }}:${{ env.image_tag }}"
+          build-args: |
+            REGISTRY=${{ inputs.npm_registry_url }}
+            REGISTRY_TOKEN=${{ secrets.npm_registry_auth_token }}
+            BUILD_TAG=${{ env.build_tag }}
 
       - name: Scan for vulnerabilities
         id: scan
@@ -188,4 +192,10 @@ jobs:
         id: set_outputs
         run: |
           echo "image=${{ inputs.image_name }}:${{ env.image_tag }}" >> $GITHUB_OUTPUT
-        
+
+      - name: Publish container image as artifact
+        uses: actions/upload-artifact@v3.1.2
+        with:
+          name: ${{ inputs.image_name }}
+          path: "${{ github.workspace }}/${{ inputs.image_name }}.image.tar.gz"
+          retention-days: 2
