@@ -154,6 +154,10 @@ jobs:
             REGISTRY_TOKEN=${{ secrets.npm_registry_auth_token }}
             BUILD_TAG=${{ env.build_tag }}
           push: false
+          load: true
+
+      - name: debug
+        run: docker images ls
           
       - name: Scan container image for vulnerabilities
         if: ${{ inputs.scan_image == true }}
