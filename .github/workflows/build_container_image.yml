@@ -153,6 +153,11 @@ jobs:
             REGISTRY=${{ inputs.npm_registry_url }}
             REGISTRY_TOKEN=${{ secrets.npm_registry_auth_token }}
             BUILD_TAG=${{ env.build_tag }}
+            outputs: type=docker
+
+      - name: debug images
+        run: | 
+          docker images ls
 
       - name: Scan for vulnerabilities
         id: scan
@@ -176,11 +181,7 @@ jobs:
             REGISTRY=${{ inputs.npm_registry_url }}
             REGISTRY_TOKEN=${{ secrets.npm_registry_auth_token }}
             BUILD_TAG=${{ env.build_tag }}
-          outputs: type=docker,dest=/tmp/image.tar
-     
-      - name: debug images
-        run: | 
-          docker images ls
+          outputs: type=tar,dest="${{ github.workspace }}/${{ inputs.image_name }}.image.tar"
           
       - name: Scan container image for vulnerabilities
         if: ${{ inputs.scan_image == true }}
@@ -192,6 +193,14 @@ jobs:
         id: set_outputs
         run: |
           echo "image=${{ inputs.image_name }}:${{ env.image_tag }}" >> $GITHUB_OUTPUT
+
+      - name: Compress image archive
+        run: gzip ${{ github.workspace }}/${{ inputs.image_name }}.image.tar
+
+      - name: debug artifacts
+        run: | 
+          ls -la ${{ github.workspace }}
+          ls -la ${{ github.workspace }}/${{ inputs.image_name }}.image.tar.gz
 
       - name: Publish container image as artifact
         uses: actions/upload-artifact@v3.1.2
