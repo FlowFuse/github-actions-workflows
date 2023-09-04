@@ -149,27 +149,14 @@ jobs:
           # tags: | 
           #   ${{ steps.image_metadata.outputs.tags }}
           #   "${{ steps.registry.outputs.registry }}/flowforge/${{ inputs.image_name }}:${{ env.image_tag }}"
+          tags: "${{ inputs.image_name }}:${{ env.image_tag }}"
           platforms: ${{ matrix.platform }}
           build-args: |
             REGISTRY=${{ inputs.npm_registry_url }}
             REGISTRY_TOKEN=${{ secrets.npm_registry_auth_token }}
             BUILD_TAG=${{ env.build_tag }}
-          push: false
-          outputs: type=image,name=flowforge/${{ inputs.image_name }},push-by-digest=true,name-canonical=true
-
-      - name: Export digest
-        run: |
-          mkdir -p /tmp/digests
-          digest="${{ steps.build.outputs.digest }}"
-          touch "/tmp/digests/${digest#sha256:}"          
-      
-      - name: Upload digest
-        uses: actions/upload-artifact@v3
-        with:
-          name: digests
-          path: /tmp/digests/*
-          if-no-files-found: error
-          retention-days: 1
+          # push: false
+          # outputs: type=image,name=flowforge/${{ inputs.image_name }},push-by-digest=true,name-canonical=true
      
       - name: debug images
         run: | 
@@ -180,7 +167,7 @@ jobs:
           ls -la /tmp/digests
           
       - name: Scan container image for vulnerabilities
-        if: ${{ inputs.scan_image == true }}
+        # if: ${{ inputs.scan_image == true }}
         uses: flowforge/github-actions-workflows/actions/scan_container_image@main
         with:
           image_ref: "${{ inputs.image_name }}:${{ env.image_tag }}"
