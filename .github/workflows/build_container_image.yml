@@ -184,7 +184,7 @@ jobs:
           # tags: | 
           #   ${{ steps.image_metadata.outputs.tags }}
           #   "${{ steps.registry.outputs.registry }}/flowforge/${{ inputs.image_name }}:${{ env.image_tag }}"
-          tags: "ghcr.io/${{ github.repository }}/${{ inputs.image_name }}:latest-${{ env.platform_tag }}"
+          tags: "ghcr.io/${{ github.repository_owner }}/${{ inputs.image_name }}:latest-${{ env.platform_tag }}"
           platforms: ${{ matrix.platform }}
           build-args: |
             REGISTRY=${{ inputs.npm_registry_url }}
@@ -196,7 +196,7 @@ jobs:
         # if: ${{ inputs.scan_image == true }}
         uses: flowforge/github-actions-workflows/actions/scan_container_image@main
         with:
-          image_ref: "ghcr.io/${{ github.repository }}/${{ inputs.image_name }}:latest-${{ env.platform_tag }}"
+          image_ref: "ghcr.io/${{ github.repository_owner }}/${{ inputs.image_name }}:latest-${{ env.platform_tag }}"
   
       - name: Set job outputs
         id: set_outputs
