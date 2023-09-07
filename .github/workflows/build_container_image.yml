@@ -100,6 +100,7 @@ jobs:
         run: | 
           echo "release_name=nightly" >> $GITHUB_ENV
           echo "image_tag=nightly-$(date +%Y%m%d%H%m%S)" >> $GITHUB_ENV
+          echo "platform_tag=$( echo ${{ matrix.platform }} | tr '/' '-' )" >> $GITHUB_ENV
           
       - name: Set build tag
         if: |
@@ -174,7 +175,7 @@ jobs:
           username: ${{github.actor}}
           password: ${{secrets.temporary_registry_token}}
 
-      - name: Build ${{ matrix.platform }} container image
+      - name: Build ${{ matrix.platform }} image
         id: build
         uses: docker/build-push-action@v4
         with:
@@ -183,7 +184,7 @@ jobs:
           # tags: | 
           #   ${{ steps.image_metadata.outputs.tags }}
           #   "${{ steps.registry.outputs.registry }}/flowforge/${{ inputs.image_name }}:${{ env.image_tag }}"
-          tags: "ghcr.io/flowforge/${{ inputs.image_name }}:latest-${{ matrix.platform }}"
+          tags: "ghcr.io/${{ github.repository }}/${{ inputs.image_name }}:latest-${{ env.platform_tag }}"
           platforms: ${{ matrix.platform }}
           build-args: |
             REGISTRY=${{ inputs.npm_registry_url }}
@@ -195,12 +196,12 @@ jobs:
         # if: ${{ inputs.scan_image == true }}
         uses: flowforge/github-actions-workflows/actions/scan_container_image@main
         with:
-          image_ref: "ghcr.io/flowforge/${{ inputs.image_name }}:latest-${{ matrix.platform }}"
+          image_ref: "ghcr.io/${{ github.repository }}/${{ inputs.image_name }}:latest-${{ env.platform_tag }}"
   
       - name: Set job outputs
         id: set_outputs
         run: |
-          echo "image=${{ inputs.image_name }}:${{ env.image_tag }}" >> $GITHUB_OUTPUT
+          echo "image=${{ inputs.image_name }}:${{ env.platform_tag }}" >> $GITHUB_OUTPUT
 
       # - name: debug directory
       #   run: | 
