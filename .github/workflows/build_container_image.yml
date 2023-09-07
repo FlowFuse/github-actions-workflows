@@ -82,7 +82,7 @@ jobs:
       matrix:
         platform: ${{ fromJson(inputs.build_platforms) }}
     permissions:
-      packages: read
+      packages: write
       contents: read
     outputs:
       image: ${{ steps.set_outputs.outputs.image }}
