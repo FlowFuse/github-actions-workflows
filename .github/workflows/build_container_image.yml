@@ -65,7 +65,7 @@ on:
       docker_hub_secret:
         description: 'Docker Hub password'
         required: false
-      github_token:
+      temporary_registry_token:
         description: 'GitHub token'
         required: true
     outputs:
@@ -172,7 +172,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{github.actor}}
-          password: ${{secrets.github_token}}
+          password: ${{secrets.temporary_registry_token}}
 
       - name: Build ${{ matrix.platform }} container image
         id: build
