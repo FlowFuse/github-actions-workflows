@@ -3,6 +3,10 @@ name: Merge multiplatform images
 on:
   workflow_call:
     inputs:
+      image_name:
+        description: 'Name of the image to build'
+        required: true
+        type: string
       architecture_suffixes:
         description: 'Architecture suffixes'
         type: string
@@ -30,7 +34,7 @@ jobs:
       - uses: docker/metadata-action@v4
         id: metadata
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: ghcr.io/${{ github.repository_owner }}/${{ inputs.image_name }}
       - uses: int128/docker-manifest-create-action@v1
         with:
           tags: ${{ steps.metadata.outputs.tags }}
