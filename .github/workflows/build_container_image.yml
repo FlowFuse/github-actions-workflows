@@ -191,10 +191,11 @@ jobs:
             REGISTRY=${{ inputs.npm_registry_url }}
             REGISTRY_TOKEN=${{ secrets.npm_registry_auth_token }}
             BUILD_TAG=${{ env.build_tag }}
-          # outputs: type=oci,dest=${{ github.workspace }}/${{ inputs.image_name }}.image.tar
+          # outputs: type=docker,dest=${{ github.workspace }}/${{ inputs.image_name }}.image.tar
+
       
       - name: Scan container image for vulnerabilities
-        # if: ${{ inputs.scan_image == true }}
+        if: ${{ inputs.scan_image == true }}
         uses: flowforge/github-actions-workflows/actions/scan_container_image@main
         with:
           image_ref: "ghcr.io/${{ github.repository_owner }}/${{ inputs.image_name }}:latest-${{ env.platform_tag }}"
