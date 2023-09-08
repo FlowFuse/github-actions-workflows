@@ -6,7 +6,7 @@ on:
       architecture_suffixes:
         description: 'Architecture suffixes'
         type: string
-        required: true
+        required: false
         default: |
           -linux-amd64
           -linux-arm64
