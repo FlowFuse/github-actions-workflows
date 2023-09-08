@@ -1,0 +1,37 @@
+name: Merge multiplatform images
+
+on:
+  workflow_call:
+    inputs:
+      architecture_suffixes:
+        description: 'Architecture suffixes'
+        type: string
+        required: true
+        default: |
+          -linux-amd64
+          -linux-arm64
+    secrets:
+      temporary_registry_token:
+        description: 'GitHub token'
+        required: true
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{github.actor}}
+          password: ${{secrets.temporary_registry_token}}
+      - uses: docker/metadata-action@v4
+        id: metadata
+        with:
+          images: ghcr.io/${{ github.repository }}
+      - uses: int128/docker-manifest-create-action@v1
+        with:
+          tags: ${{ steps.metadata.outputs.tags }}
+          suffixes: ${{ inputs.architecture_suffixes}}
