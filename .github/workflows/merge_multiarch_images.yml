@@ -37,5 +37,5 @@ jobs:
           images: ghcr.io/${{ github.repository_owner }}/${{ inputs.image_name }}
       - uses: int128/docker-manifest-create-action@v1
         with:
-          tags: ${{ steps.metadata.outputs.tags }}
+          tags: ghcr.io/${{ github.repository_owner }}/${{ inputs.image_name }}:latest
           suffixes: ${{ inputs.architecture_suffixes}}
