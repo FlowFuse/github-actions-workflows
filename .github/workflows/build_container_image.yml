@@ -191,7 +191,7 @@ jobs:
           # tags: | 
           #   ${{ steps.image_metadata.outputs.tags }}
           #   "${{ steps.registry.outputs.registry }}/flowforge/${{ inputs.image_name }}:${{ env.image_tag }}"
-          tags: "ghcr.io/${{ github.repository_owner }}/${{ inputs.image_name }}:latest-${{ env.platform_tag }}"
+          tags: "ghcr.io/${{ github.repository_owner }}/${{ inputs.image_name }}:main-${{ env.platform_tag }}"
           platforms: ${{ matrix.platform }}
           push: true
           build-args: |
