@@ -3,11 +3,6 @@ name: Build container image
 on:
   workflow_call:
     inputs:
-      environment:
-        description: 'Environment to build the image for'
-        required: true
-        type: string
-        default: 'stage'
       image_name:
         description: 'Name of the image to build'
         required: true
@@ -31,9 +26,6 @@ on:
         type: string
         required: false
         default: '["linux/amd64","linux/arm64"]'
-        # default: |- 
-        #   linux/amd64
-        #   linux/arm64
       dockerfile_path:
         description: 'Path to the Dockerfile, within $build_context, used for image build'
         type: string
@@ -56,27 +48,13 @@ on:
       npm_registry_auth_token:
         description: 'NPM registry authentication token'
         required: false
-      aws_access_key_id:
-        description: 'AWS access key ID'
-        required: true
-      aws_access_key_secret:
-        description: 'AWS access key secret'
-        required: true
-      docker_hub_secret:
-        description: 'Docker Hub password'
-        required: false
       temporary_registry_token:
         description: 'GitHub token'
         required: true
-    outputs:
-      image:
-        description: 'Image tag'
-        value: ${{ jobs.container.outputs.image }}
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
     strategy:
       fail-fast: false
       matrix:
@@ -84,8 +62,6 @@ jobs:
     permissions:
       packages: write
       contents: read
-    outputs:
-      image: ${{ steps.set_outputs.outputs.image }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -99,7 +75,6 @@ jobs:
       - name: Set release name and image tag
         run: | 
           echo "release_name=nightly" >> $GITHUB_ENV
-          echo "image_tag=nightly-$(date +%Y%m%d%H%m%S)" >> $GITHUB_ENV
           echo "platform_tag=$( echo ${{ matrix.platform }} | tr '/' '-' )" >> $GITHUB_ENV
           
       - name: Set build tag
@@ -124,49 +99,6 @@ jobs:
             mv package.json-patched package.json
           done
           cat package.json
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1-node16
-        with:
-          aws-access-key-id: ${{ secrets.aws_access_key_id }}
-          aws-secret-access-key: ${{ secrets.aws_access_key_secret }}
-          aws-region: eu-west-1
-
-      - name: Login to container registry
-        id: registry
-        uses: aws-actions/amazon-ecr-login@v1
-
-      - name: Get image metadata
-        id: image_metadata
-        uses: docker/metadata-action@v3
-        with:
-          tags: |
-            type=raw,prefix=${{ inputs.image_tag_prefix }},value=${{ env.release_name }}
-          flavor: |
-            latest=false
-          images: |
-            ${{ steps.registry.outputs.registry }}/flowforge/${{ inputs.image_name }}
-
-      - name: Build and load for scan
-        if: ${{ inputs.scan_image == true }}
-        uses: docker/build-push-action@v4
-        with:
-          context: ${{ inputs.build_context }}
-          file: "${{ inputs.build_context }}/${{ inputs.dockerfile_path }}"
-          tags: "${{ inputs.image_name }}:${{ env.image_tag }}"
-          build-args: |
-            REGISTRY=${{ inputs.npm_registry_url }}
-            REGISTRY_TOKEN=${{ secrets.npm_registry_auth_token }}
-            BUILD_TAG=${{ env.build_tag }}
-          outputs: type=docker
-
-      - name: Scan for vulnerabilities
-        if: ${{ inputs.scan_image == true }}
-        id: scan
-        uses: crazy-max/ghaction-container-scan@v2
-        with:
-          image: "${{ inputs.image_name }}:${{ env.image_tag }}"
-          dockerfile: "${{ inputs.build_context }}/${{ inputs.dockerfile_path }}"
       
       - name: Login to temporary registry
         id: ghcr
@@ -176,21 +108,12 @@ jobs:
           username: ${{github.actor}}
           password: ${{secrets.temporary_registry_token}}
 
-      - name: Debug metadata
-        uses: docker/metadata-action@v3
-        with:
-          images: ${{steps.ghcr.outputs.registry}}/${{ inputs.image_name }}}
-          flavor: suffix=-${{ matrix.platform }}
-
       - name: Build container image
         id: build
         uses: docker/build-push-action@v4
         with:
           context: ${{ inputs.build_context }}
           file: "${{ inputs.build_context }}/${{ inputs.dockerfile_path }}"
-          # tags: | 
-          #   ${{ steps.image_metadata.outputs.tags }}
-          #   "${{ steps.registry.outputs.registry }}/flowforge/${{ inputs.image_name }}:${{ env.image_tag }}"
           tags: "ghcr.io/${{ github.repository_owner }}/${{ inputs.image_name }}:main-${{ env.platform_tag }}"
           platforms: ${{ matrix.platform }}
           push: true
@@ -198,35 +121,9 @@ jobs:
             REGISTRY=${{ inputs.npm_registry_url }}
             REGISTRY_TOKEN=${{ secrets.npm_registry_auth_token }}
             BUILD_TAG=${{ env.build_tag }}
-          # outputs: type=docker,dest=${{ github.workspace }}/${{ inputs.image_name }}.image.tar
-
       
       - name: Scan container image for vulnerabilities
         if: ${{ inputs.scan_image == true }}
         uses: flowforge/github-actions-workflows/actions/scan_container_image@main
         with:
           image_ref: "ghcr.io/${{ github.repository_owner }}/${{ inputs.image_name }}:latest-${{ env.platform_tag }}"
-  
-      - name: Set job outputs
-        id: set_outputs
-        run: |
-          echo "image=${{ inputs.image_name }}:${{ env.platform_tag }}" >> $GITHUB_OUTPUT
-
-      # - name: debug directory
-      #   run: | 
-      #     ls -la ${{ github.workspace }}
-
-      # - name: Compress image archive
-      #   run: gzip ${{ github.workspace }}/${{ inputs.image_name }}.image.tar
-
-      # - name: debug artifacts
-      #   run: | 
-      #     ls -la ${{ github.workspace }}
-      #     ls -la ${{ github.workspace }}/${{ inputs.image_name }}.image.tar.gz
-
-      # - name: Publish container image as artifact
-      #   uses: actions/upload-artifact@v3.1.2
-      #   with:
-      #     name: ${{ inputs.image_name }}
-      #     path: "${{ github.workspace }}/${{ inputs.image_name }}.image.tar.gz"
-      #     retention-days: 2
