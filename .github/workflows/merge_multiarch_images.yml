@@ -23,7 +23,7 @@ jobs:
   merge:
     runs-on: ubuntu-latest
     permissions:
-      packages: delete
+      packages: write
       contents: read
     steps:
       - name: Login to temporary registry
