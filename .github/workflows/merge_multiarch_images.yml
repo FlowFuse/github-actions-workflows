@@ -18,6 +18,10 @@ on:
       temporary_registry_token:
         description: 'GitHub token'
         required: true
+    outputs:
+      image:
+        description: 'Full image tag'
+        value: ${{ jobs.merge.outputs.image }}
 
 jobs:
   merge:
@@ -25,6 +29,9 @@ jobs:
     permissions:
       packages: write
       contents: read
+    outputs:
+      image: ${{ steps.set_outputs.outputs.image }}
+    
     steps:
       - name: Login to temporary registry
         uses: docker/login-action@v2
@@ -46,15 +53,9 @@ jobs:
           package-type: 'container'
           min-versions-to-keep: 3
           delete-only-untagged-versions: 'true'
-      
-      # - name: Prune old images
-      #   uses: snok/container-retention-policy@v2
-      #   with:
-      #     image-names: main
-      #     cut-off: two hours ago UTC
-      #     timestamp-to-use: updated_at
-      #     account-type: org
-      #     org-name: ${{ github.repository_owner }}
-      #     keep-at-least: 1
-      #     skip-tags: main
-      #     token: ${{ secrets.temporary_registry_token }}
+
+      - name: Set workflow outputs
+        id: set_outputs
+        run: |
+          echo "image=ghcr.io/${{ github.repository_owner }}/${{ inputs.image_name }}:main" >> $GITHUB_OUTPUT
+  
