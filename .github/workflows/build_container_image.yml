@@ -118,8 +118,6 @@ jobs:
           platforms: ${{ matrix.platform }}
           push: true
           build-args: |
-            REGISTRY=${{ inputs.npm_registry_url }}
-            REGISTRY_TOKEN=${{ secrets.npm_registry_auth_token }}
             BUILD_TAG=${{ env.build_tag }}
       
       - name: Scan container image for vulnerabilities
