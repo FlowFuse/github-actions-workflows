@@ -1,0 +1,118 @@
+name: Deploy container image to kubernetes cluster
+
+on:
+  workflow_call:
+    inputs:
+      service_name:
+        description: 'Service name'
+        type: string
+        required: true
+      environment:
+        description: 'Environment to deploy to'
+        type: string
+        required: true
+      image:
+        description: 'Image to deploy'
+        type: string
+        required: true
+      deployment_name:
+        description: 'Kubernetes deployment name'
+        type: string
+        required: true
+      container_name:
+        description: 'Container name within specified deployment'
+        type: string
+        required: true
+      kubectl_version:
+        description: 'kubectl version'
+        type: string
+        required: false
+        default: 'v1.23.4'
+    secrets:
+      aws_access_key_id:
+        description: 'AWS access key ID'
+        required: true
+      aws_secret_access_key:
+        description: 'AWS secret access key'
+        required: true
+      temporary_registry_token:
+        description: 'GitHub token'
+        required: true
+      eks_cluster_name:
+        description: 'EKS cluster name'
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment}}
+    permissions:
+      packages: read
+      contents: read
+    steps:      
+      - name: Set unique image tag
+        id: set-image-tag
+        run: |
+          echo "image_tag=nightly-$(date +%Y%m%d%H%m%S)" >> $GITHUB_ENV
+
+      - name: Configure AWS credentials
+        id: aws-config
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.aws_access_key_id }}
+          aws-secret-access-key: ${{ secrets.aws_secret_access_key }}
+          aws-region: eu-west-1
+          mask-aws-account-id: true
+      
+      - name: Login to AWS ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+        with:
+          mask-password: 'true'
+
+      - name: Login to temporary registry
+        id: login-ghcr
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.temporary_registry_token }}
+
+      - name: Push image to ECR
+        uses: akhilerm/tag-push-action@v2.1.0
+        with:
+          src: ${{ inputs.image }}
+          dst: |
+            ${{ steps.aws-config.outputs.aws-account-id }}.dkr.ecr.eu-west-1.amazonaws.com/flowforge/${{ inputs.service_name }}:nightly
+            ${{ steps.aws-config.outputs.aws-account-id }}.dkr.ecr.eu-west-1.amazonaws.com/flowforge/${{ inputs.service_name }}:${{ env.image_tag }}
+
+      - name: Configure AWS credentials for EKS interaction
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.aws_access_key_id }}
+          aws-secret-access-key: ${{ secrets.aws_secret_access_key }}
+          aws-region: eu-west-1
+          role-to-assume: arn:aws:iam::${{ steps.aws-config.outputs.aws-account-id }}:role/K8sAdmin
+          role-duration-seconds: 1200
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: ${{ inputs.kubectl_version }}
+
+      - name: Configure kubectl
+        run: |
+          aws eks update-kubeconfig --region eu-west-1 --name ${{ secrets.eks_cluster_name }}
+        
+      - name: Update image and wait for deployment to finish
+        id: update-image
+        timeout-minutes: 5
+        run: |
+          kubectl -n default set image deployment/${{ inputs.deployment_name }} ${{ inputs.container_name }}=${{ steps.aws-config.outputs.aws-account-id }}.dkr.ecr.eu-west-1.amazonaws.com/flowforge/${{ inputs.service_name }}:${{ env.image_tag }}
+          kubectl -n default rollout status deployment/${{ inputs.deployment_name }}
+
+      - name: Rollback failed deployment
+        if: ${{ failure() && steps.update-image.conclusion == 'failure'}}
+        run: |
+          kubectl -n default rollout undo deployment/${{ inputs.deployment_name }}
+          kubectl -n default rollout status deployment/${{ inputs.deployment_name }}
