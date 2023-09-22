@@ -10,7 +10,7 @@ on:
       image:
         description: 'Image to deploy'
         type: string
-        required: false
+        required: true
       kubectl_version:
         description: 'kubectl version'
         type: string
