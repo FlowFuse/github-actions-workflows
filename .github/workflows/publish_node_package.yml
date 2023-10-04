@@ -117,7 +117,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_registry_token }}
           SENTRY_AUTH_TOKEN: ${{ secrets.sentry_auth_token }}
-          SENTRY_ORGANISATION: ${{ secrets.sentry_organisation }}
+          SENTRY_ORG: ${{ secrets.sentry_organisation }}
           SENRTY_PROJECT: ${{ secrets.sentry_project }}
       
       - name: Set package publish parameters
