@@ -45,6 +45,15 @@ on:
       npm_registry_token:
         description: 'NPM registry authentication token'
         required: true
+      sentry_auth_token:
+        description: 'Sentry authentication token'
+        required: false
+      sentry_organisation:
+        description: 'Sentry organisation name'
+        required: false
+      sentry_project:
+        description: 'Sentry project name'
+        required: false
     outputs:
       release_name:
         description: 'Name of the release.'
@@ -107,6 +116,9 @@ jobs:
           npm run build
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_registry_token }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.sentry_auth_token }}
+          SENTRY_ORGANISATION: ${{ secrets.sentry_organisation }}
+          SENRTY_PROJECT: ${{ secrets.sentry_project }}
       
       - name: Set package publish parameters
         if: ${{ inputs.publish_package }}
