@@ -51,7 +51,7 @@ jobs:
       - uses: int128/docker-manifest-create-action@v1
         name: Merge and push
         with:
-          tags: ghcr.io/${{ env.repository_owner_lower }}/${{ inputs.image_name }}:main${{ inputs.image_tag_prefix }}}
+          tags: ghcr.io/${{ env.repository_owner_lower }}/${{ inputs.image_name }}:main${{ inputs.image_tag_prefix }}
           suffixes: ${{ inputs.architecture_suffixes}}
       
       - name: Prune old images
