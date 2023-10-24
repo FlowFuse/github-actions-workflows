@@ -96,7 +96,7 @@ jobs:
             ${{ steps.aws-config.outputs.aws-account-id }}.dkr.ecr.eu-west-1.amazonaws.com/flowforge/${{ inputs.service_name }}:${{ env.image_tag }}
 
       - name: Configure AWS credentials for EKS interaction
-        if: toJson(${{ inputs.deploy }})
+        if: fromJson(${{ inputs.deploy }})
         uses: aws-actions/configure-aws-credentials@v3
         with:
           aws-access-key-id: ${{ secrets.aws_access_key_id }}
@@ -106,18 +106,18 @@ jobs:
           role-duration-seconds: 1200
 
       - name: Setup kubectl
-        if: toJson(${{ inputs.deploy }})
+        if: fromJson(${{ inputs.deploy }})
         uses: azure/setup-kubectl@v3
         with:
           version: ${{ inputs.kubectl_version }}
 
       - name: Configure kubectl
-        if: toJson(${{ inputs.deploy }})
+        if: fromJson(${{ inputs.deploy }})
         run: |
           aws eks update-kubeconfig --region eu-west-1 --name ${{ secrets.eks_cluster_name }}
         
       - name: Update image and wait for deployment to finish
-        if: toJson(${{ inputs.deploy }})
+        if: fromJson(${{ inputs.deploy }})
         id: update-image
         timeout-minutes: 5
         run: |
@@ -125,7 +125,7 @@ jobs:
           kubectl -n default rollout status deployment/${{ inputs.deployment_name }}
 
       - name: Rollback failed deployment
-        if: ${{ failure() && steps.update-image.conclusion == 'failure' && toJson(inputs.deploy) }}
+        if: ${{ failure() && steps.update-image.conclusion == 'failure' && fromJson(inputs.deploy) }}
         run: |
           kubectl -n default rollout undo deployment/${{ inputs.deployment_name }}
           kubectl -n default rollout status deployment/${{ inputs.deployment_name }}
