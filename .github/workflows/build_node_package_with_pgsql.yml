@@ -44,5 +44,5 @@ jobs:
         run: npm run lint
   
       - name: Run tests
-        if: ${{ inputs.run_tests == 'true' }}
+        if: ${{ fromJson(inputs.run_tests) }}
         run: npm run test
