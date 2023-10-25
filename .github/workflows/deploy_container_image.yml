@@ -62,7 +62,7 @@ jobs:
       - name: Set unique image tag
         id: set-image-tag
         run: |
-          echo "image_tag=nightly${{ inputs.image_tag_prefix }}-$(date +%Y%m%d%H%m%S)" >> $GITHUB_ENV
+          echo "image_tag=nightly-$(date +%Y%m%d%H%m%S)" >> $GITHUB_ENV
 
       - name: Configure AWS credentials
         id: aws-config
