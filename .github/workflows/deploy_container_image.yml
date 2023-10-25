@@ -92,8 +92,8 @@ jobs:
         with:
           src: ${{ inputs.image }}
           dst: |
-            ${{ steps.aws-config.outputs.aws-account-id }}.dkr.ecr.eu-west-1.amazonaws.com/flowforge/${{ inputs.service_name }}:nightly${{ inputs.image_tag_prefix }}
-            ${{ steps.aws-config.outputs.aws-account-id }}.dkr.ecr.eu-west-1.amazonaws.com/flowforge/${{ inputs.service_name }}:${{ env.image_tag }}
+            ${{ steps.aws-config.outputs.aws-account-id }}.dkr.ecr.eu-west-1.amazonaws.com/flowforge/${{ inputs.service_name }}:${{ inputs.image_tag_prefix }}nightly
+            ${{ steps.aws-config.outputs.aws-account-id }}.dkr.ecr.eu-west-1.amazonaws.com/flowforge/${{ inputs.service_name }}:${{ inputs.image_tag_prefix }}${{ env.image_tag }}
 
       - name: Configure AWS credentials for EKS interaction
         if: ${{fromJson( inputs.deploy )}}
