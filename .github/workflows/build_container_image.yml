@@ -128,11 +128,9 @@ jobs:
         run: |
           docker pull "ghcr.io/${{ env.repository_owner_lower }}/${{ inputs.image_name }}:${{ inputs.image_tag_prefix }}main-${{ env.platform_tag }}"
       
-      - name: List images
-        run: docker images
-      
       - name: Scan container image for vulnerabilities
         if: ${{ fromJson(inputs.scan_image) }}
         uses: flowforge/github-actions-workflows/actions/scan_container_image@main
         with:
           image_ref: "ghcr.io/${{ env.repository_owner_lower }}/${{ inputs.image_name }}:${{ inputs.image_tag_prefix }}main-${{ env.platform_tag }}"
+          check_name: "${{ inputs.image_name }}-${{ env.platform_tag}} scan results"
