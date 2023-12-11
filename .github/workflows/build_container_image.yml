@@ -61,7 +61,7 @@ jobs:
         platform: ${{ fromJson(inputs.build_platforms) }}
     permissions:
       packages: write
-      contents: read
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v3
