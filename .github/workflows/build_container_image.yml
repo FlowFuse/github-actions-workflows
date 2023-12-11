@@ -121,6 +121,9 @@ jobs:
           provenance: false
           build-args: |
             BUILD_TAG=${{ env.build_tag }}
+
+      - name: List images
+        run: docker images
       
       - name: Scan container image for vulnerabilities
         if: ${{ fromJson(inputs.scan_image) }}
