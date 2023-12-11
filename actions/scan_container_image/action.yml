@@ -45,7 +45,7 @@ runs:
         ignore-unfixed: true
         vuln-type: 'os,library'
         severity: '${{ inputs.severity }}'
-        security-checks: '${{ inputs.security_checks }}'
+        scanners: '${{ inputs.security_checks }}'
 
     - name: Publish scan results
       uses: EnricoMi/publish-unit-test-result-action@v2
