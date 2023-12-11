@@ -31,7 +31,7 @@ runs:
         if [[ ${{ inputs.soft_fail  == 'true'}} ]] ; then
           echo "trivy_exit_code=0" >> $GITHUB_ENV
         else
-          echo "trivy_exit_code=0" >> $GITHUB_ENV
+          echo "trivy_exit_code=1" >> $GITHUB_ENV
         fi
 
     - name: Scan container image for vulnerabilities
