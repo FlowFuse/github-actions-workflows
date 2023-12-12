@@ -61,7 +61,9 @@ jobs:
         platform: ${{ fromJson(inputs.build_platforms) }}
     permissions:
       packages: write
-      contents: read
+      contents: write
+      checks: write
+      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -115,18 +117,20 @@ jobs:
         with:
           context: ${{ inputs.build_context }}
           file: "${{ inputs.build_context }}/${{ inputs.dockerfile_path }}"
-          tags: "ghcr.io/${{ env.repository_owner_lower}}/${{ inputs.image_name }}:${{ inputs.image_tag_prefix }}main-${{ env.platform_tag }}"
+          tags: "ghcr.io/${{ env.repository_owner_lower }}/${{ inputs.image_name }}:${{ inputs.image_tag_prefix }}main-${{ env.platform_tag }}"
           platforms: ${{ matrix.platform }}
           push: true
           provenance: false
           build-args: |
             BUILD_TAG=${{ env.build_tag }}
 
-      - name: List images
-        run: docker images
+      - name: Pull image
+        run: |
+          docker pull "ghcr.io/${{ env.repository_owner_lower }}/${{ inputs.image_name }}:${{ inputs.image_tag_prefix }}main-${{ env.platform_tag }}"
       
       - name: Scan container image for vulnerabilities
         if: ${{ fromJson(inputs.scan_image) }}
         uses: flowforge/github-actions-workflows/actions/scan_container_image@main
         with:
-          image_ref: "ghcr.io/${{ env.repository_owner_lower}}/${{ inputs.image_name }}:${{ inputs.image_tag_prefix }}main-${{ env.platform_tag }}"
+          image_ref: "ghcr.io/${{ env.repository_owner_lower }}/${{ inputs.image_name }}:${{ inputs.image_tag_prefix }}main-${{ env.platform_tag }}"
+          check_name: "${{ inputs.image_name }}:${{ inputs.image_tag_prefix }}main-${{ env.platform_tag }} scan results"
