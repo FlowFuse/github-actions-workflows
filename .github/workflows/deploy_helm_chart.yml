@@ -83,7 +83,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v3
         with:
           aws-region: ${{ inputs.cluster_region }}
-          role-to-assume: arn:aws:iam::${{ secrets.aws_account_id }}:role/${{ inputs.iam_role_name }}}
+          role-to-assume: arn:aws:iam::${{ secrets.aws_account_id }}:role/${{ inputs.iam_role_name }}
           role-session-name: GithubActionsRoleSession
           role-duration-seconds: 900
 
