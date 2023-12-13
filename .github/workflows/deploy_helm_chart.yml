@@ -87,6 +87,12 @@ jobs:
           role-session-name: GithubActionsRoleSession
           role-duration-seconds: 900
 
+      - name: Combine values
+        id: combined-values
+        shell: bash
+        run: |
+          echo "COMBINED_VALUES"=${{ inputs.chart_values_file }},${{ inputs.chart_values }}" >> GITHUB_ENV
+
       - name: Deploy Helm
         uses: bitovi/github-actions-deploy-eks-helm@v1.2.8
         with:
@@ -96,7 +102,7 @@ jobs:
           chart-repository: ${{ inputs.chart_repository }}
           chart-path: ${{ inputs.chart_path }}
           config-files: ${{ inputs.chart_values_file }}
-          values: ${{ inputs.chart_values }}
+          values: ${{ env.COMBINED_VALUES }}
           namespace: ${{ inputs.chart_namespace }}
           name: ${{ inputs.chart_name }}
           version: ${{ inputs.chart_version }}
