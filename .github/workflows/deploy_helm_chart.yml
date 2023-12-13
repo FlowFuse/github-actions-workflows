@@ -63,6 +63,9 @@ on:
       cluster_name:
         description: 'EKS cluster name'
         required: true
+      chart_secret_values:
+        description: 'Comma separated list of value set for helms which should not be exposed in runner logs. Example: "key1=value1,key2=value2"'
+        required: false
 
 
 jobs:
