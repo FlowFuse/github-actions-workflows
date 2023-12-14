@@ -94,7 +94,7 @@ jobs:
 
       - name: Set chart values
         run: |
-          if [ -n "${{ secrets.chart_secret_values }}" ]
+          if [ "${{ secrets.chart_secret_values }}" == "" ]
           then
             echo "VALUES=${{ inputs.chart_values }}" >> $GITHUB_ENV
           else
