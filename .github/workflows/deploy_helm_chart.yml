@@ -38,6 +38,7 @@ on:
         description: 'Comma separated list of value set for helms. Example: "key1=value1,key2=value2"'
         type: string
         required: false
+        default: ''
       chart_namespace:
         description: 'Kubernetes namespace where chart will be deployed'
         type: string
