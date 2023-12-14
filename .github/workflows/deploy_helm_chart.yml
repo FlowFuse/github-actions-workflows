@@ -72,7 +72,6 @@ on:
         description: 'Comma separated list of value set for helms which should not be exposed in runner logs. Example: "key1=value1,key2=value2"'
         required: false
 
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
