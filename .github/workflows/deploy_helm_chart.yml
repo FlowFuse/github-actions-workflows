@@ -56,6 +56,10 @@ on:
         type: string
         required: false
         default: '300s'
+      validate_url:
+        description: 'The url(s) to validate after deployment. Multiple values example: "https://example.com|http://example.net"'
+        type: string
+        required: false
     secrets:
       aws_account_id:
         description: 'AWS account ID'
@@ -103,3 +107,13 @@ jobs:
           atomic: true
           helm-wait: true
           timeout: ${{ inputs.chart_timeout }}
+
+      - name: Validate deployment
+        if: ${{ inputs.validate_url != '' }}
+        uses: jtalk/url-health-check-action@v3
+        with:
+          url: ${{ inputs.validate_url }}
+          follow-redirect: true
+          max-attempts: 3
+          retry-delay: 10s
+          retry-all: false
