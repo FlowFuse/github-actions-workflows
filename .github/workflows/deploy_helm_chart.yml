@@ -38,6 +38,7 @@ on:
         description: 'Comma separated list of value set for helms. Example: "key1=value1,key2=value2"'
         type: string
         required: false
+        default: null
       chart_namespace:
         description: 'Kubernetes namespace where chart will be deployed'
         type: string
@@ -71,7 +72,6 @@ on:
         description: 'Comma separated list of value set for helms which should not be exposed in runner logs. Example: "key1=value1,key2=value2"'
         required: false
 
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -91,6 +91,15 @@ jobs:
           role-session-name: GithubActionsRoleSession
           role-duration-seconds: 900
 
+      - name: Set chart values
+        run: |
+          if [ "${{ secrets.chart_secret_values }}" == "" ]
+          then
+            echo "VALUES=${{ inputs.chart_values }}" >> $GITHUB_ENV
+          else
+            echo "VALUES=${{ format('{0},{1}', secrets.chart_secret_values, inputs.chart_values) }}" >> $GITHUB_ENV
+          fi
+
       - name: Deploy Helm
         uses: bitovi/github-actions-deploy-eks-helm@v1.2.8
         with:
@@ -100,7 +109,7 @@ jobs:
           chart-repository: ${{ inputs.chart_repository }}
           chart-path: ${{ inputs.chart_path }}
           config-files: ${{ inputs.chart_values_file }}
-          values: ${{ format('{0},{1}', secrets.chart_secret_values, inputs.chart_values) }}
+          values: ${{ env.VALUES }}
           namespace: ${{ inputs.chart_namespace }}
           name: ${{ inputs.chart_name }}
           version: ${{ inputs.chart_version }}
