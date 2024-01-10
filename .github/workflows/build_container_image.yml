@@ -1,5 +1,4 @@
 name: Build container image
-
 on:
   workflow_call:
     inputs:
@@ -96,6 +95,7 @@ jobs:
         working-directory: ${{ inputs.build_context }}
         run: |
           echo "## Packages used to build image" >> $GITHUB_STEP_SUMMARY
+
           for dependency in $(echo "${{ inputs.package_dependencies }}" | tr '\n' ' ')
           do
             echo "Updating $dependency to ${{ env.release_name }}"
