@@ -100,8 +100,9 @@ jobs:
             echo "Updating $dependency to ${{ env.release_name }}"
             cat package.json | jq ".dependencies[\"$dependency\"] = \"${{ env.release_name }}\"" > package.json-patched
             mv package.json-patched package.json
+            echo "### :package: $dependency version used: $(npm show $dependency dist-tags --json | jq -r '.${{ env.release_name }}')" >> $GITHUB_STEP_SUMMARY
           done
-          cat package.json
+          cat package.json        
       
       - name: Login to temporary registry
         id: ghcr
