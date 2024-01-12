@@ -6,7 +6,7 @@ on:
       deploy:
         description: 'Deploy to kubernetes cluster'
         type: boolean
-        required: true
+        required: false
         default: true
       service_name:
         description: 'Service name'
