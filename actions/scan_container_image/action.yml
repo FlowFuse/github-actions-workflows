@@ -39,7 +39,7 @@ runs:
       with:
         image-ref: '${{ inputs.image_ref }}'
         format: 'sarif'
-        output: 'trivy-results.sarif'
+        output: '${{ inputs.check_name }}-trivy-results.sarif'
         exit-code: '${{ env.trivy_exit_code }}'
         ignore-unfixed: true
         vuln-type: 'os,library'
@@ -49,4 +49,4 @@ runs:
     - name: Upload Trivy scan results to GitHub Security tab
       uses: github/codeql-action/upload-sarif@v3
       with:
-        sarif_file: 'trivy-results.sarif'
+        sarif_file: '${{ inputs.check_name }}-trivy-results.sarif'
