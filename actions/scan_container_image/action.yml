@@ -50,3 +50,4 @@ runs:
       uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: '${{ inputs.check_name }}-trivy-results.sarif'
+        category: '${{ inputs.check_name }} scanning'
