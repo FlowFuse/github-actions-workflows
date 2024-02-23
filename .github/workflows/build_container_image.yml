@@ -132,7 +132,7 @@ jobs:
       
       - name: Scan container image for vulnerabilities
         if: ${{ fromJson(inputs.scan_image) }}
-        uses: flowforge/github-actions-workflows/actions/scan_container_image@main
+        uses: flowforge/github-actions-workflows/actions/scan_container_image@feat-publish-trivy-to-github-sec
         with:
           image_ref: "ghcr.io/${{ env.repository_owner_lower }}/${{ inputs.image_name }}:${{ inputs.image_tag_prefix }}main-${{ env.platform_tag }}"
           check_name: "${{ inputs.image_name }}:${{ inputs.image_tag_prefix }}main-${{ env.platform_tag }} scan results"
