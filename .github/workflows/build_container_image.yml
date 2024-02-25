@@ -64,6 +64,7 @@ jobs:
       contents: write
       checks: write
       pull-requests: write
+      security-events: write
     steps:
       - name: Checkout
         uses: actions/checkout@v3
