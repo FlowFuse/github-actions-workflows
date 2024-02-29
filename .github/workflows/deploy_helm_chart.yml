@@ -3,6 +3,11 @@ name: Deploy helm chart to EKS cluster
 on:
   workflow_call:
     inputs:
+      deploy_branch:
+        description: 'Branch from which helm chart will be installed'
+        type: string
+        required: true
+        default: 'main'
       environment:
         description: 'Environment to deploy to'
         type: string
@@ -73,8 +78,61 @@ on:
         required: false
 
 jobs:
+  diff:
+    runs-on: ubuntu-latest
+    if: github.ref != 'refs/heads/${{ inputs.deploy_branch }}'
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Install Helm Diff plugin
+        run: |
+          helm plugin install https://github.com/databus23/helm-diff
+
+      - name: Set inline chart values
+        id: prepare_values
+        run: |
+          values=""
+          if [ -n "${{ inputs.chart_values }}" ]; then
+            values="${{ inputs.chart_values }}"
+          fi
+          if [ -n "${{ secrets.chart_secret_values }}" ]; then
+            values="${values:+${values},}${{ secrets.chart_secret_values }}"
+          fi
+          echo "::set-output name=values::${values}"
+
+      - name: Run Helm diff
+        id: helm_diff
+        run: |
+          if [ -n "${{ steps.prepare_values.outputs.values }}" ]; then
+            helm diff upgrade ${{ inputs.chart_name }} ${{ inputs.chart_path }} --version ${{ inputs.chart_version }} --values ${{ inputs.chart_values_file }} --set ${{ steps.prepare_values.outputs.values }} --namespace ${{ inputs.chart_namespace }}
+          else
+            helm diff upgrade ${{ inputs.chart_name }} ${{ inputs.chart_path }} --version ${{ inputs.chart_version }} --values ${{ inputs.chart_values_file }} --namespace ${{ inputs.chart_namespace }}
+          fi
+
+      - name: Create PR comment
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const output = `${{ steps.helm_diff.outputs.stdout }}`
+            const issue_number = context.payload.pull_request.number
+            const owner = context.repo.owner
+            const repo = context.repo.repo
+            github.rest.issues.createComment({
+              owner: owner,
+              repo: repo,
+              issue_number: issue_number,
+              body: output
+            })
+    
   deploy:
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/${{ inputs.deploy_branch }}'
     environment: ${{ inputs.environment }}
     permissions:
       id-token: write
