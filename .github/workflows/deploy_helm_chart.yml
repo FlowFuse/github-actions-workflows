@@ -85,8 +85,11 @@ on:
 jobs:
   diff:
     runs-on: ubuntu-latest
-    if: github.ref != 'refs/heads/${{ inputs.deploy_branch }}'
+    if: |
+      ${{ github.ref }} != 'refs/heads/${{ inputs.deploy_branch }}'
     environment: ${{ inputs.environment }}
+    permissions:
+      id-token: write
     steps:
       - run: |
           echo "${{ github.ref }}"
@@ -157,7 +160,8 @@ jobs:
     
   deploy:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/${{ inputs.deploy_branch }}'
+    if: |
+      ${{ github.ref }} != 'refs/heads/${{ inputs.deploy_branch }}'
     environment: ${{ inputs.environment }}
     permissions:
       id-token: write
