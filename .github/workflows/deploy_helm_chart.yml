@@ -6,7 +6,7 @@ on:
       deploy_branch:
         description: 'Branch from which helm chart will be installed'
         type: string
-        required: true
+        required: false
         default: 'main'
       environment:
         description: 'Environment to deploy to'
