@@ -95,8 +95,8 @@ jobs:
         run: |
           echo "Deploy branch: ${{ inputs.deploy_branch }}"
           echo "Github ref: ${{ github.ref }}"
-          echo "Run diff job: ${{ !contains('refs/heads/${{ inputs.deploy_branch }}', ${{ github.ref }} ) }}"
-          echo "Run deploy job: ${{ contains('refs/heads/${{ inputs.deploy_branch }}', ${{ github.ref }} ) }}"
+          echo "Run diff job: ${{ !contains(format('{0}/{1}', 'refs/heads', inputs.deploy_branch ), github.ref ) }}
+          echo "Run deploy job: ${{ contains(format('{0}/{1}', 'refs/heads', inputs.deploy_branch ), github.ref ) }}
 
       - name: Checkout code
         uses: actions/checkout@v4
