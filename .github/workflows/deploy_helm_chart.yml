@@ -85,8 +85,7 @@ on:
 jobs:
   diff:
     runs-on: ubuntu-latest
-    if: |
-      ${{ github.ref }} != 'refs/heads/${{ inputs.deploy_branch }}'
+    if: "!contains('refs/heads/${{ inputs.deploy_branch }}', ${{ github.ref }} )"
     environment: ${{ inputs.environment }}
     permissions:
       id-token: write
@@ -134,6 +133,17 @@ jobs:
           fi
           echo "values=${values}" >> $GITHUB_ENV
 
+      - name: Set chart repository name
+        run: |
+          chart_path="${{ inputs.chart_path }}"
+          chart_repo_name="${chart_path%%/*}"
+          echo "chart_repo_name=${chart_repo_name}" >> $GITHUB_ENV
+
+      - name: Add chart's repository
+        run: |
+          helm repo add ${{ env.chart_repo_name }}} ${{ inputs.chart_repository }}
+          helm repo update
+
       - name: Run Helm diff
         id: helm_diff
         run: |
@@ -161,7 +171,7 @@ jobs:
     
   deploy:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: "contains('refs/heads/${{ inputs.deploy_branch }}', ${{ github.ref }} )"
     environment: ${{ inputs.environment }}
     permissions:
       id-token: write
