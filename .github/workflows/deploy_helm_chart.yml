@@ -146,9 +146,9 @@ jobs:
         id: helm_diff
         run: |
           if [ -n "${{ steps.prepare_values.outputs.values }}" ]; then
-            helm diff upgrade ${{ inputs.chart_name }} ${{ inputs.chart_path }} --version ${{ inputs.chart_version }} --values ${{ inputs.chart_values_file }} --set ${{ steps.prepare_values.outputs.values }} --namespace ${{ inputs.chart_namespace }} >> diff.result
+            helm diff upgrade ${{ inputs.chart_name }} ${{ inputs.chart_path }} --version ${{ inputs.chart_version }} --values ${{ inputs.chart_values_file }} --set ${{ steps.prepare_values.outputs.values }} --namespace ${{ inputs.chart_namespace }} --output dyff >> diff.result
           else
-            helm diff upgrade ${{ inputs.chart_name }} ${{ inputs.chart_path }} --version ${{ inputs.chart_version }} --values ${{ inputs.chart_values_file }} --namespace ${{ inputs.chart_namespace }} >> diff.result
+            helm diff upgrade ${{ inputs.chart_name }} ${{ inputs.chart_path }} --version ${{ inputs.chart_version }} --values ${{ inputs.chart_values_file }} --namespace ${{ inputs.chart_namespace }} --output dyff >> diff.result
           fi
 
       - name: Create PR comment
