@@ -175,7 +175,7 @@ jobs:
     
   deploy:
     runs-on: ubuntu-latest
-    if: "contains('refs/heads/${{ inputs.deploy_branch }}', ${{ github.ref }} )"
+    if: github.ref == 'refs/heads/main'
     environment: ${{ inputs.environment }}
     permissions:
       id-token: write
