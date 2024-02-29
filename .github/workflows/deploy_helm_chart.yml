@@ -90,6 +90,7 @@ jobs:
     environment: ${{ inputs.environment }}
     permissions:
       id-token: write
+      contents: write
     steps:
       - run: |
           echo "${{ github.ref }}"
@@ -161,7 +162,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     if: |
-      ${{ github.ref }} != 'refs/heads/${{ inputs.deploy_branch }}'
+      ${{ github.ref }} == 'refs/heads/${{ inputs.deploy_branch }}'
     environment: ${{ inputs.environment }}
     permissions:
       id-token: write
