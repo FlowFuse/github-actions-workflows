@@ -151,8 +151,12 @@ jobs:
             helm diff upgrade ${{ inputs.chart_name }} ${{ inputs.chart_path }} --version ${{ inputs.chart_version }} --values ${{ inputs.chart_values_file }} --namespace ${{ inputs.chart_namespace }}
           fi
 
+      - name: debug helm diff
+        run: |
+          echo "${{ steps.helm_diff.outputs.stdout }}"
+
       - name: Create PR comment
-        if: ${{ steps.helm_diff.outputs.stdout }} != ""
+        if: steps.helm_diff.outputs.stdout != ''
         uses: actions/github-script@v7
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
