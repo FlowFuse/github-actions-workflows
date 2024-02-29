@@ -88,6 +88,7 @@ jobs:
     if: ${{ !contains(format('{0}/{1}', 'refs/heads', inputs.deploy_branch ), github.ref ) }}
     environment: ${{ inputs.environment }}
     permissions:
+      contents: read
       id-token: write
       pull-requests: write
     steps:
