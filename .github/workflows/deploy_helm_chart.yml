@@ -93,6 +93,10 @@ jobs:
     steps:
       - run: |
           echo "${{ github.ref }}"
+          echo "Negate:"
+          echo "!contains('refs/heads/${{ inputs.deploy_branch }}', ${{ github.ref }} )"
+          echo "Contains:"
+          echo "contains('refs/heads/${{ inputs.deploy_branch }}', ${{ github.ref }} )"
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -141,7 +145,7 @@ jobs:
 
       - name: Add chart's repository
         run: |
-          helm repo add ${{ env.chart_repo_name }}} ${{ inputs.chart_repository }}
+          helm repo add ${{ env.chart_repo_name }} ${{ inputs.chart_repository }}
           helm repo update
 
       - name: Run Helm diff
