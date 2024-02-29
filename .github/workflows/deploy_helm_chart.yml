@@ -106,12 +106,12 @@ jobs:
           helm plugin install https://github.com/databus23/helm-diff
 
       - name: Setup kubectl
-        uses: azure/setup-kubectl@v3
+        uses: azure/setup-kubectl@v4.0.0
         with:
           version: ${{ inputs.kubectl_version }}
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v3
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ inputs.cluster_region }}
           role-to-assume: arn:aws:iam::${{ secrets.aws_account_id }}:role/${{ inputs.iam_role_name }}
@@ -120,7 +120,7 @@ jobs:
   
       - name: Configure kubectl
         run: |
-          aws eks update-kubeconfig --region ${{ inputs.cluster_region }} --name ${{ secrets.eks_cluster_name }}
+          aws eks update-kubeconfig --region ${{ inputs.cluster_region }} --name ${{ secrets.cluster_name }}
 
       - name: Set inline chart values
         id: prepare_values
@@ -161,8 +161,7 @@ jobs:
     
   deploy:
     runs-on: ubuntu-latest
-    if: |
-      ${{ github.ref }} == 'refs/heads/${{ inputs.deploy_branch }}'
+    if: github.ref == 'refs/heads/main'
     environment: ${{ inputs.environment }}
     permissions:
       id-token: write
