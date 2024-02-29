@@ -146,17 +146,18 @@ jobs:
         id: helm_diff
         run: |
           if [ -n "${{ steps.prepare_values.outputs.values }}" ]; then
-            helm diff upgrade ${{ inputs.chart_name }} ${{ inputs.chart_path }} --version ${{ inputs.chart_version }} --values ${{ inputs.chart_values_file }} --set ${{ steps.prepare_values.outputs.values }} --namespace ${{ inputs.chart_namespace }}
+            diff=$(helm diff upgrade ${{ inputs.chart_name }} ${{ inputs.chart_path }} --version ${{ inputs.chart_version }} --values ${{ inputs.chart_values_file }} --set ${{ steps.prepare_values.outputs.values }} --namespace ${{ inputs.chart_namespace }})
           else
-            helm diff upgrade ${{ inputs.chart_name }} ${{ inputs.chart_path }} --version ${{ inputs.chart_version }} --values ${{ inputs.chart_values_file }} --namespace ${{ inputs.chart_namespace }}
+            diff=$(helm diff upgrade ${{ inputs.chart_name }} ${{ inputs.chart_path }} --version ${{ inputs.chart_version }} --values ${{ inputs.chart_values_file }} --namespace ${{ inputs.chart_namespace }})
           fi
+          echo "diff=${diff}" >> $GITHUB_ENV
 
       - name: debug helm diff
         run: |
-          echo "${{ steps.helm_diff.outputs.stdout }}"
+          echo "${{ steps.helm_diff.outputs.diff }}"
 
       - name: Create PR comment
-        if: steps.helm_diff.outputs.stdout != ''
+        if: steps.helm_diff.outputs.diff != ''
         uses: actions/github-script@v7
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
