@@ -3,8 +3,49 @@ name: Deploy helm chart to EKS cluster
 on:
   workflow_call:
     inputs:
-      environment:
-        description: 'Environment to deploy to'
+      chart_action:
+        description: 'Helm action to perform'
+        type: string
+        required: false
+        default: 'install'
+      chart_name:
+        description: 'The name of the helm release'
+        type: string
+        required: true
+      chart_namespace:
+        description: 'Kubernetes namespace where chart will be deployed'
+        type: string
+        required: false
+        default: 'default'
+      chart_path:
+        description: 'Path to the Helm chart'
+        type: string
+        required: true
+      chart_repository:
+        description: 'Helm chart repository'
+        type: string
+        required: true
+      chart_secrets_template_values:
+        description: 'Path to the template values file used in conjunction with 1Password'
+        type: string
+        required: false
+        default: null
+      chart_timeout:
+        description: 'The timeout for the helm chart deployment'
+        type: string
+        required: false
+        default: '300s'
+      chart_values:
+        description: 'Comma separated list of value set for helms. Example: "key1=value1,key2=value2"'
+        type: string
+        required: false
+        default: null
+      chart_values_file:
+        description: 'Path to the Helm chart values file'
+        type: string
+        required: false
+      chart_version:
+        description: 'The version of the helm chart'
         type: string
         required: true
       cluster_region:
@@ -12,51 +53,15 @@ on:
         type: string
         required: false
         default: 'eu-west-1'
+      environment:
+        description: 'Environment to deploy to'
+        type: string
+        required: true
       iam_role_name:
         description: 'Name of the IAM role to assume'
         type: string
         required: false
         default: 'K8sAdmin'
-      chart_action:
-        description: 'Helm action to perform'
-        type: string
-        required: false
-        default: 'install'
-      chart_repository:
-        description: 'Helm chart repository'
-        type: string
-        required: true
-      chart_path:
-        description: 'Path to the Helm chart'
-        type: string
-        required: true
-      chart_values_file:
-        description: 'Path to the Helm chart values file'
-        type: string
-        required: false
-      chart_values:
-        description: 'Comma separated list of value set for helms. Example: "key1=value1,key2=value2"'
-        type: string
-        required: false
-        default: null
-      chart_namespace:
-        description: 'Kubernetes namespace where chart will be deployed'
-        type: string
-        required: false
-        default: 'default'
-      chart_name:
-        description: 'The name of the helm release'
-        type: string
-        required: true
-      chart_version:
-        description: 'The version of the helm chart'
-        type: string
-        required: true
-      chart_timeout:
-        description: 'The timeout for the helm chart deployment'
-        type: string
-        required: false
-        default: '300s'
       validate_url:
         description: 'The url(s) to validate after deployment. Multiple values example: "https://example.com|http://example.net"'
         type: string
@@ -65,11 +70,14 @@ on:
       aws_account_id:
         description: 'AWS account ID'
         required: true
+      chart_secret_values:
+        description: 'Comma separated list of value set for helms which should not be exposed in runner logs. Example: "key1=value1,key2=value2"'
+        required: false
       cluster_name:
         description: 'EKS cluster name'
         required: true
-      chart_secret_values:
-        description: 'Comma separated list of value set for helms which should not be exposed in runner logs. Example: "key1=value1,key2=value2"'
+      op_token:
+        description: '1Password seervice account token'
         required: false
 
 jobs:
@@ -91,6 +99,18 @@ jobs:
           role-session-name: GithubActionsRoleSession
           role-duration-seconds: 900
 
+      - name: Install 1Password CLI
+        uses: 1password/install-cli-action@v1
+        with:
+          version: 2.25.0
+      
+      - name: Template sensitive value file
+        if: ${{ secrets.op_token != '' && inputs.chart_secrets_template_values != '' }}
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+        run: |
+          op inject -i ${{ inputs.chart_secrets_template_values }} -o sensitive-values.yml
+
       - name: Set chart values
         run: |
           if [ "${{ secrets.chart_secret_values }}" == "" ]
@@ -100,6 +120,24 @@ jobs:
             echo "VALUES=${{ format('{0},{1}', secrets.chart_secret_values, inputs.chart_values) }}" >> $GITHUB_ENV
           fi
 
+      - name: Create chart value files
+        if: ${{ inputs.chart_values != '' || inputs.chart_secrets_template_values != '' }}
+        run: |
+          values="${{ inputs.chart_values }}"
+          secrets="${{ inputs.chart_secret_values }}"
+          value_files=""
+          if [[ -n "$chart_values" ]]; then
+            value_files="$chart_values"
+          fi
+          if [[ -n "$chart_secret_values" ]]; then
+            if [[ -n "$value_files" ]]; then
+              value_files="$value_files,sensitive-values.yml"
+            else
+              value_files="sensitive-values.yml"
+            fi
+          fi
+          echo "VALUE_FILES=${value_files}" >> $GITHUB_ENV
+
       - name: Deploy Helm
         uses: bitovi/github-actions-deploy-eks-helm@v1.2.8
         with:
@@ -108,7 +146,7 @@ jobs:
           cluster-name: ${{ secrets.cluster_name }}
           chart-repository: ${{ inputs.chart_repository }}
           chart-path: ${{ inputs.chart_path }}
-          config-files: ${{ inputs.chart_values_file }}
+          config-files: ${{ env.VALUE_FILES }}
           values: ${{ env.VALUES }}
           namespace: ${{ inputs.chart_namespace }}
           name: ${{ inputs.chart_name }}
