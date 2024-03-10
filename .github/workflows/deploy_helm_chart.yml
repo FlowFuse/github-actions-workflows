@@ -117,7 +117,7 @@ jobs:
           fi
 
       - name: Create chart value files
-        if: ${{ inputs.chart_values != '' || inputs.chart_values_files_template != '' }}
+        if: ${{ inputs.chart_values_file != '' || inputs.chart_values_files_template != '' }}
         run: |
           values="${{ inputs.chart_values_file }}"
           secrets="${{ inputs.chart_values_files_template }}"
