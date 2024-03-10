@@ -25,11 +25,6 @@ on:
         description: 'Helm chart repository'
         type: string
         required: true
-      chart_secrets_template_values:
-        description: 'Path to the template values file used in conjunction with 1Password'
-        type: string
-        required: false
-        default: null
       chart_timeout:
         description: 'The timeout for the helm chart deployment'
         type: string
@@ -42,6 +37,10 @@ on:
         default: null
       chart_values_file:
         description: 'Path to the Helm chart values file'
+        type: string
+        required: false
+      chart_values_files_template:
+        description: 'Path to the template values file used in conjunction with 1Password'
         type: string
         required: false
       chart_version:
@@ -70,9 +69,6 @@ on:
       aws_account_id:
         description: 'AWS account ID'
         required: true
-      chart_secret_values:
-        description: 'Comma separated list of value set for helms which should not be exposed in runner logs. Example: "key1=value1,key2=value2"'
-        required: false
       cluster_name:
         description: 'EKS cluster name'
         required: true
@@ -104,12 +100,12 @@ jobs:
         with:
           version: 2.25.0
       
-      - name: Template sensitive value file
-        if: ${{ secrets.op_token != '' && inputs.chart_secrets_template_values != '' }}
+      - name: Template value file
+        if: ${{ secrets.op_token != '' && inputs.chart_values_files_template != '' }}
         env:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
         run: |
-          op inject -i ${{ inputs.chart_secrets_template_values }} -o sensitive-values.yml
+          op inject -i ${{ inputs.chart_values_files_template }} -o templated-values.yml
 
       - name: Set chart values
         run: |
@@ -121,7 +117,7 @@ jobs:
           fi
 
       - name: Create chart value files
-        if: ${{ inputs.chart_values != '' || inputs.chart_secrets_template_values != '' }}
+        if: ${{ inputs.chart_values != '' || inputs.chart_values_files_template != '' }}
         run: |
           values="${{ inputs.chart_values }}"
           secrets="${{ inputs.chart_secret_values }}"
@@ -131,9 +127,9 @@ jobs:
           fi
           if [[ -n "$chart_secret_values" ]]; then
             if [[ -n "$value_files" ]]; then
-              value_files="$value_files,sensitive-values.yml"
+              value_files="$value_files,templated-values.yml"
             else
-              value_files="sensitive-values.yml"
+              value_files="templated-values.yml"
             fi
           fi
           echo "VALUE_FILES=${value_files}" >> $GITHUB_ENV
