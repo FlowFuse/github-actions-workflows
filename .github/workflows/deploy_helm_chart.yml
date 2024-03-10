@@ -122,10 +122,10 @@ jobs:
           values="${{ inputs.chart_values_file }}"
           secrets="${{ inputs.chart_values_files_template }}"
           value_files=""
-          if [[ -n "$chart_values" ]]; then
-            value_files="$chart_values"
+          if [[ -n "$values" ]]; then
+            value_files="$values"
           fi
-          if [[ -n "$chart_secret_values" ]]; then
+          if [[ -n "$secrets" ]]; then
             if [[ -n "$value_files" ]]; then
               value_files="$value_files,templated-values.yml"
             else
