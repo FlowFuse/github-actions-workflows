@@ -1,5 +1,4 @@
 name: Deploy helm chart to EKS cluster
-
 on:
   workflow_call:
     inputs:
@@ -116,7 +115,7 @@ jobs:
             echo "VALUES=${{ format('{0},{1}', secrets.chart_secret_values, inputs.chart_values) }}" >> $GITHUB_ENV
           fi
 
-      - name: Create chart value files
+      - name: Create chart value files parameter
         if: ${{ inputs.chart_values_file != '' || inputs.chart_values_files_template != '' }}
         run: |
           values="${{ inputs.chart_values_file }}"
