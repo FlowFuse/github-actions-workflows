@@ -101,9 +101,9 @@ jobs:
           version: 2.25.0
       
       - name: Template value file
-        if: ${{ secrets.op_token != '' && inputs.chart_values_files_template != '' }}
+        if: ${{ env.OP_SERVICE_ACCOUNT_TOKEN != '' && inputs.chart_values_files_template != '' }}
         env:
-          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.op_token }}
         run: |
           op inject -i ${{ inputs.chart_values_files_template }} -o templated-values.yml
 
