@@ -1,55 +1,27 @@
 name: Deploy helm chart to EKS cluster
-
 on:
   workflow_call:
     inputs:
-      environment:
-        description: 'Environment to deploy to'
-        type: string
-        required: true
-      cluster_region:
-        description: 'AWS region of the EKS cluster'
-        type: string
-        required: false
-        default: 'eu-west-1'
-      iam_role_name:
-        description: 'Name of the IAM role to assume'
-        type: string
-        required: false
-        default: 'K8sAdmin'
       chart_action:
         description: 'Helm action to perform'
         type: string
         required: false
         default: 'install'
-      chart_repository:
-        description: 'Helm chart repository'
+      chart_name:
+        description: 'The name of the helm release'
         type: string
         required: true
-      chart_path:
-        description: 'Path to the Helm chart'
-        type: string
-        required: true
-      chart_values_file:
-        description: 'Path to the Helm chart values file'
-        type: string
-        required: false
-      chart_values:
-        description: 'Comma separated list of value set for helms. Example: "key1=value1,key2=value2"'
-        type: string
-        required: false
-        default: null
       chart_namespace:
         description: 'Kubernetes namespace where chart will be deployed'
         type: string
         required: false
         default: 'default'
-      chart_name:
-        description: 'The name of the helm release'
+      chart_path:
+        description: 'Path to the Helm chart'
         type: string
         required: true
-      chart_version:
-        description: 'The version of the helm chart'
+      chart_repository:
+        description: 'Helm chart repository'
         type: string
         required: true
       chart_timeout:
@@ -57,6 +29,37 @@ on:
         type: string
         required: false
         default: '300s'
+      chart_values:
+        description: 'Comma separated list of value set for helms. Example: "key1=value1,key2=value2"'
+        type: string
+        required: false
+        default: null
+      chart_values_file:
+        description: 'Path to the Helm chart values file'
+        type: string
+        required: false
+      chart_values_files_template:
+        description: 'Path to the template values file used in conjunction with 1Password'
+        type: string
+        required: false
+      chart_version:
+        description: 'The version of the helm chart'
+        type: string
+        required: true
+      cluster_region:
+        description: 'AWS region of the EKS cluster'
+        type: string
+        required: false
+        default: 'eu-west-1'
+      environment:
+        description: 'Environment to deploy to'
+        type: string
+        required: true
+      iam_role_name:
+        description: 'Name of the IAM role to assume'
+        type: string
+        required: false
+        default: 'K8sAdmin'
       validate_url:
         description: 'The url(s) to validate after deployment. Multiple values example: "https://example.com|http://example.net"'
         type: string
@@ -70,6 +73,9 @@ on:
         required: true
       chart_secret_values:
         description: 'Comma separated list of value set for helms which should not be exposed in runner logs. Example: "key1=value1,key2=value2"'
+        required: false
+      op_token:
+        description: '1Password seervice account token'
         required: false
 
 jobs:
@@ -91,6 +97,18 @@ jobs:
           role-session-name: GithubActionsRoleSession
           role-duration-seconds: 900
 
+      - name: Install 1Password CLI
+        uses: 1password/install-cli-action@v1
+        with:
+          version: 2.25.0
+      
+      - name: Template value file
+        if: ${{ env.OP_SERVICE_ACCOUNT_TOKEN != '' && inputs.chart_values_files_template != '' }}
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.op_token }}
+        run: |
+          op inject -i ${{ inputs.chart_values_files_template }} -o templated-values.yml
+
       - name: Set chart values
         run: |
           if [ "${{ secrets.chart_secret_values }}" == "" ]
@@ -100,6 +118,24 @@ jobs:
             echo "VALUES=${{ format('{0},{1}', secrets.chart_secret_values, inputs.chart_values) }}" >> $GITHUB_ENV
           fi
 
+      - name: Create chart value files parameter
+        if: ${{ inputs.chart_values_file != '' || inputs.chart_values_files_template != '' }}
+        run: |
+          values="${{ inputs.chart_values_file }}"
+          secrets="${{ inputs.chart_values_files_template }}"
+          value_files=""
+          if [[ -n "$values" ]]; then
+            value_files="$values"
+          fi
+          if [[ -n "$secrets" ]]; then
+            if [[ -n "$value_files" ]]; then
+              value_files="$value_files,templated-values.yml"
+            else
+              value_files="templated-values.yml"
+            fi
+          fi
+          echo "VALUE_FILES=${value_files}" >> $GITHUB_ENV
+
       - name: Deploy Helm
         uses: bitovi/github-actions-deploy-eks-helm@v1.2.8
         with:
@@ -108,7 +144,7 @@ jobs:
           cluster-name: ${{ secrets.cluster_name }}
           chart-repository: ${{ inputs.chart_repository }}
           chart-path: ${{ inputs.chart_path }}
-          config-files: ${{ inputs.chart_values_file }}
+          config-files: ${{ env.VALUE_FILES }}
           values: ${{ env.VALUES }}
           namespace: ${{ inputs.chart_namespace }}
           name: ${{ inputs.chart_name }}
