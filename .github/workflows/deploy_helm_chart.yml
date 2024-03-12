@@ -214,6 +214,7 @@ jobs:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
             let diff = '';
+            const fs = require('fs');
             if (fs.existsSync('diff.result')) {
               diff = fs.readFileSync('diff.result', 'utf8');
             }
@@ -228,7 +229,6 @@ jobs:
             </details>
             `;
 
-            const fs = require('fs');
             fs.writeFileSync('./summary.md', output);
       
       - name: Write the step summary
