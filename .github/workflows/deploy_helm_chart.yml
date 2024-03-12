@@ -182,7 +182,7 @@ jobs:
         id: helm_diff
         run: |
           if [ -n "${{ steps.prepare_values.outputs.values }}" ]; then
-            helm diff upgrade \
+            diff=$(helm diff upgrade \
               ${{ inputs.chart_name }} \
               ${{ inputs.chart_path }} \
                --version ${{ inputs.chart_version }} \
@@ -192,9 +192,9 @@ jobs:
                --suppress-output-line-regex "(app.kubernetes.io/version|chart):.*" \
                --three-way-merge \
                --suppress-secrets \
-               --output dyff
+               --output dyff) >> $GITHUB_OUTPUT
           else
-            helm diff upgrade \
+            diff=$(helm diff upgrade \
               ${{ inputs.chart_name }} \
               ${{ inputs.chart_path }} \
               --version ${{ inputs.chart_version }} \
@@ -203,13 +203,13 @@ jobs:
               --suppress-output-line-regex "(app.kubernetes.io/version|chart):.*" \
               --three-way-merge \
               --suppress-secrets \
-              --output dyff
+              --output dyff) >> $GITHUB_OUTPUT
           fi
 
       - name: Create the plan summary
         uses: actions/github-script@v6
         env:
-          DIFF: '${{ steps.helm_diff.outputs.stdout }}'
+          DIFF: '${{ steps.helm_diff.outputs.diff }}'
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
