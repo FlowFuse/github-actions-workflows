@@ -181,7 +181,6 @@ jobs:
       - name: Run Helm diff
         id: helm_diff
         run: |
-          echo 'text<<EOF' >> $GITHUB_OUTPUT
           if [ -n "${{ steps.prepare_values.outputs.values }}" ]; then
             helm diff upgrade \
               ${{ inputs.chart_name }} \
