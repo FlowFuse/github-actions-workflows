@@ -212,15 +212,18 @@ jobs:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
             const output = `## Environment: \`${{ inputs.environment }}\`
-            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ inputs.terraformTemplateDirectory }}\`, Workflow: \`${{ github.workflow }}\`*
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Workflow: \`${{ github.workflow }}\`*
             
             #### Helm Diff 📖\`${{ steps.helm_diff.outcome }}\`
             <details><summary>Show Diff</summary>
             \`\`\`\n
-            ${process.env.DIFF}
+            ${{ env.DIFF }}
             \`\`\`
             </details>
             `;
+
+            const fs = require('fs');
+            fs.writeFileSync('./summary.md', output);
       
       - name: Write the step summary
         run: cat ./summary.md >> $GITHUB_STEP_SUMMARY
