@@ -192,7 +192,7 @@ jobs:
                --suppress-output-line-regex "(app.kubernetes.io/version|chart):.*" \
                --three-way-merge \
                --suppress-secrets \
-               --output dyff
+               --output dyff)
           else
             diff=$(helm diff upgrade \
               ${{ inputs.chart_name }} \
@@ -203,7 +203,7 @@ jobs:
               --suppress-output-line-regex "(app.kubernetes.io/version|chart):.*" \
               --three-way-merge \
               --suppress-secrets \
-              --output dyff
+              --output dyff)
           fi
           echo 'text<<EOF' >> $GITHUB_OUTPUT
           echo "${diff}" >> $GITHUB_OUTPUT
