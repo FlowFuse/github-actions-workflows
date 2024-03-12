@@ -191,7 +191,8 @@ jobs:
                --namespace ${{ inputs.chart_namespace }} \
                --suppress-output-line-regex "(app.kubernetes.io/version|chart):.*" \
                --three-way-merge \
-               --output dyff >> diff.result
+               --suppress-secrets \
+               --output dyff
           else
             helm diff upgrade \
               ${{ inputs.chart_name }} \
@@ -201,7 +202,8 @@ jobs:
               --namespace ${{ inputs.chart_namespace }} \
               --suppress-output-line-regex "(app.kubernetes.io/version|chart):.*" \
               --three-way-merge \
-              --output dyff >> diff.result
+              --suppress-secrets \
+              --output dyff
           fi
 
       - name: Create the plan summary
