@@ -182,7 +182,6 @@ jobs:
         id: helm_diff
         run: |
           if [ -n "${{ steps.prepare_values.outputs.values }}" ]; then
-            echo -e "\`\`\`\n" >> diff.results
             helm diff upgrade \
               ${{ inputs.chart_name }} \
               ${{ inputs.chart_path }} \
@@ -193,9 +192,7 @@ jobs:
                --suppress-output-line-regex "(app.kubernetes.io/version|chart):.*" \
                --three-way-merge \
                --output dyff >> diff.result
-            echo -e "\`\`\`\n" >> diff.results
           else
-            echo -e "\`\`\`\n" >> diff.results
             helm diff upgrade \
               ${{ inputs.chart_name }} \
               ${{ inputs.chart_path }} \
@@ -205,14 +202,34 @@ jobs:
               --suppress-output-line-regex "(app.kubernetes.io/version|chart):.*" \
               --three-way-merge \
               --output dyff >> diff.result
-            echo -e "\`\`\`\n" >> diff.results
           fi
 
-      - name: Create PR comment
-        uses: thollander/actions-comment-pull-request@v2
+      - name: Create the plan summary
+        uses: actions/github-script@v6
+        env:
+          DIFF: '${{ steps.helm_diff.outputs.stdout }}'
         with:
-          filePath: ./diff.result
-          comment_tag: helmdiff
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const output = `## Environment: \`${{ inputs.environment }}\`
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`${{ inputs.terraformTemplateDirectory }}\`, Workflow: \`${{ github.workflow }}\`*
+            
+            #### Helm Diff 📖\`${{ steps.helm_diff.outcome }}\`
+            <details><summary>Show Diff</summary>
+            \`\`\`\n
+            ${process.env.DIFF}
+            \`\`\`
+            </details>
+            `;
+      
+      - name: Write the step summary
+        run: cat ./summary.md >> $GITHUB_STEP_SUMMARY
+
+      # - name: Create PR comment
+      #   uses: thollander/actions-comment-pull-request@v2
+      #   with:
+      #     filePath: ./diff.result
+      #     comment_tag: helmdiff
 
       # - name: Create PR comment
       #   uses: actions/github-script@v7
