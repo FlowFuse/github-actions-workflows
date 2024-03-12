@@ -208,6 +208,7 @@ jobs:
           echo 'text<<EOF' >> $GITHUB_OUTPUT
           echo "${diff}" >> $GITHUB_OUTPUT
           echo 'EOF' >> $GITHUB_OUTPUT
+          echo "${diff}"
 
       - name: Create the diff summary
         uses: actions/github-script@v7
