@@ -183,11 +183,28 @@ jobs:
         run: |
           if [ -n "${{ steps.prepare_values.outputs.values }}" ]; then
             echo -e "\`\`\`\n" >> diff.results
-            helm diff upgrade ${{ inputs.chart_name }} ${{ inputs.chart_path }} --version ${{ inputs.chart_version }} ${{ env.VALUE_FILES }} --set ${{ steps.prepare_values.outputs.values }} --namespace ${{ inputs.chart_namespace }} --output dyff >> diff.result
+            helm diff upgrade \
+              ${{ inputs.chart_name }} \
+              ${{ inputs.chart_path }} \
+               --version ${{ inputs.chart_version }} \
+               ${{ env.VALUE_FILES }} \
+               --set ${{ steps.prepare_values.outputs.values }} \
+               --namespace ${{ inputs.chart_namespace }} \
+               --suppress-output-line-regex "(app.kubernetes.io/version|chart):.*" \
+               --three-way-merge \
+               --output dyff >> diff.result
             echo -e "\`\`\`\n" >> diff.results
           else
             echo -e "\`\`\`\n" >> diff.results
-            helm diff upgrade ${{ inputs.chart_name }} ${{ inputs.chart_path }} --version ${{ inputs.chart_version }} ${{ env.VALUE_FILES }} --namespace ${{ inputs.chart_namespace }} --output dyff >> diff.result
+            helm diff upgrade \
+              ${{ inputs.chart_name }} \
+              ${{ inputs.chart_path }} \
+              --version ${{ inputs.chart_version }} \
+              ${{ env.VALUE_FILES }} \
+              --namespace ${{ inputs.chart_namespace }} \
+              --suppress-output-line-regex "(app.kubernetes.io/version|chart):.*" \
+              --three-way-merge \
+              --output dyff >> diff.result
             echo -e "\`\`\`\n" >> diff.results
           fi
 
