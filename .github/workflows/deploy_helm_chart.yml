@@ -207,7 +207,7 @@ jobs:
               --output dyff)" >> $GITHUB_OUTPUT
           fi
           echo 'EOF' >> $GITHUB_OUTPUT
-          echo $GITHUB_OUTPUT
+          cat $GITHUB_OUTPUT
 
       - name: Create the diff summary
         uses: actions/github-script@v7
