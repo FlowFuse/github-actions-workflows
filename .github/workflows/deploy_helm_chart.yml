@@ -137,20 +137,20 @@ jobs:
           fi
           echo "values=${values}" >> $GITHUB_ENV
 
-      - name: Create chart value files parameter
+      - name: Create chart values files parameter
         if: ${{ inputs.chart_values_file != '' || inputs.chart_values_files_template != '' }}
         run: |
           values="${{ inputs.chart_values_file }}"
           secrets="${{ inputs.chart_values_files_template }}"
           value_files=""
           if [[ -n "$values" ]]; then
-            value_files="$values"
+            value_files="--values $values"
           fi
           if [[ -n "$secrets" ]]; then
             if [[ -n "$value_files" ]]; then
-              value_files="$value_files,templated-values.yml"
+              value_files="$value_files --values templated-values.yml"
             else
-              value_files="templated-values.yml"
+              value_files="--values templated-values.yml"
             fi
           fi
           echo "VALUE_FILES=${value_files}" >> $GITHUB_ENV
@@ -170,9 +170,9 @@ jobs:
         id: helm_diff
         run: |
           if [ -n "${{ steps.prepare_values.outputs.values }}" ]; then
-            helm diff upgrade ${{ inputs.chart_name }} ${{ inputs.chart_path }} --version ${{ inputs.chart_version }} --values ${{ env.VALUE_FILES }} --set ${{ steps.prepare_values.outputs.values }} --namespace ${{ inputs.chart_namespace }} --output dyff >> diff.result
+            helm diff upgrade ${{ inputs.chart_name }} ${{ inputs.chart_path }} --version ${{ inputs.chart_version }} ${{ env.VALUE_FILES }} --set ${{ steps.prepare_values.outputs.values }} --namespace ${{ inputs.chart_namespace }} --output dyff >> diff.result
           else
-            helm diff upgrade ${{ inputs.chart_name }} ${{ inputs.chart_path }} --version ${{ inputs.chart_version }} --values ${{ env.VALUE_FILES }} --namespace ${{ inputs.chart_namespace }} --output dyff >> diff.result
+            helm diff upgrade ${{ inputs.chart_name }} ${{ inputs.chart_path }} --version ${{ inputs.chart_version }} ${{ env.VALUE_FILES }} --namespace ${{ inputs.chart_namespace }} --output dyff >> diff.result
           fi
 
       - name: Create PR comment
