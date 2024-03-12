@@ -218,17 +218,17 @@ jobs:
             if (fs.existsSync('diff.result')) {
               diff = fs.readFileSync('diff.result', 'utf8');
             }
-            const output = '## Environment: \`${{ inputs.environment }}\`
+            const output = `## Environment: \`${{ inputs.environment }}\`
             *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Workflow: \`${{ github.workflow }}\`*
             
             #### Helm Diff 📖\`${{ steps.helm_diff.outcome }}\`
             <details><summary>Show Diff</summary>
-            \`\`\`\n
+            \`\`\`
             ${diff}
             \`\`\`
             
             </details>
-            ';
+            `;
 
             fs.writeFileSync('./summary.md', output);
       
