@@ -223,10 +223,7 @@ jobs:
             
             #### Helm Diff 📖\`${{ steps.helm_diff.outcome }}\`
             <details><summary>Show Diff</summary>
-            \`\`\`
-            ${diff}
-            \`\`\`
-            
+            \`\`\`${diff}\`\`\`
             </details>
             `;
 
