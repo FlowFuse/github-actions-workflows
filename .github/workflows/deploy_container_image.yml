@@ -54,9 +54,6 @@ on:
       image:
         description: 'Image name ang tag'
         value: ${{ jobs.deploy.outputs.image }}
-      full_image:
-        description: 'Full image'
-        value: ${{ jobs.deploy.outputs.full_image }}
 
 jobs:
   deploy:
@@ -67,7 +64,6 @@ jobs:
       contents: read
     outputs:
       image: ${{ steps.set_outputs.outputs.image }}
-      full_image: ${{ steps.set_outputs.outputs.full_image }}
     steps:      
       - name: Set unique image tag
         id: set-image-tag
@@ -143,5 +139,4 @@ jobs:
       - name: Set workflow outputs
         id: set_outputs
         run: |
-          echo "full_image=${{ steps.aws-config.outputs.aws-account-id }}.dkr.ecr.eu-west-1.amazonaws.com/flowforge/${{ inputs.service_name }}:${{ inputs.image_tag_prefix }}${{ env.image_tag }}" >> $GITHUB_OUTPUT
           echo "image=${{ inputs.service_name }}:${{ inputs.image_tag_prefix }}${{ env.image_tag }}" >> $GITHUB_OUTPUT
