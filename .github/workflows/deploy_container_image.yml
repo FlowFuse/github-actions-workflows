@@ -58,6 +58,8 @@ jobs:
     permissions:
       packages: read
       contents: read
+    outputs:
+      image: ${{ steps.set_outputs.outputs.image }}
     steps:      
       - name: Set unique image tag
         id: set-image-tag
@@ -129,3 +131,8 @@ jobs:
         run: |
           kubectl -n default rollout undo deployment/${{ inputs.deployment_name }}
           kubectl -n default rollout status deployment/${{ inputs.deployment_name }}
+
+      - name: Set workflow outputs
+        id: set_outputs
+        run: |
+          echo "image=${{ steps.aws-config.outputs.aws-account-id }}.dkr.ecr.eu-west-1.amazonaws.com/flowforge/${{ inputs.service_name }}:${{ inputs.image_tag_prefix }}${{ env.image_tag }}" >> $GITHUB_OUTPUT
