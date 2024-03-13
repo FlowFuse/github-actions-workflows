@@ -55,11 +55,21 @@ on:
         description: 'Environment to deploy to'
         type: string
         required: true
+      deploy_branch:
+        description: 'Branch from which helm chart will be installed'
+        type: string
+        required: false
+        default: 'main'
       iam_role_name:
         description: 'Name of the IAM role to assume'
         type: string
         required: false
         default: 'K8sAdmin'
+      kubectl_version:
+        description: 'kubectl version'
+        type: string
+        required: false
+        default: 'v1.23.4'
       validate_url:
         description: 'The url(s) to validate after deployment. Multiple values example: "https://example.com|http://example.net"'
         type: string
@@ -79,8 +89,155 @@ on:
         required: false
 
 jobs:
+  diff:
+    runs-on: ubuntu-latest
+    if: ${{ !contains(format('{0}/{1}', 'refs/heads', inputs.deploy_branch ), github.ref ) }}
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Install Helm Diff plugin
+        run: |
+          helm plugin install https://github.com/databus23/helm-diff
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ inputs.cluster_region }}
+          role-to-assume: arn:aws:iam::${{ secrets.aws_account_id }}:role/${{ inputs.iam_role_name }}
+          role-session-name: GithubActionsRoleSession
+          role-duration-seconds: 900
+            
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4.0.0
+        with:
+          version: ${{ inputs.kubectl_version }}
+      
+      - name: Configure kubectl
+        run: |
+          aws eks update-kubeconfig --region ${{ inputs.cluster_region }} --name ${{ secrets.cluster_name }}
+
+      - name: Install 1Password CLI
+        uses: 1password/install-cli-action@v1
+        with:
+          version: 2.25.0
+        
+      - name: Template value file
+        if: ${{ env.OP_SERVICE_ACCOUNT_TOKEN != '' && inputs.chart_values_files_template != '' }}
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.op_token }}
+        run: |
+          op inject -i ${{ inputs.chart_values_files_template }} -o templated-values.yml
+
+      - name: Set inline chart values
+        id: prepare_values
+        run: |
+          values=""
+          if [ -n "${{ inputs.chart_values }}" ]; then
+            values="${{ inputs.chart_values }}"
+          fi
+          if [ -n "${{ secrets.chart_secret_values }}" ]; then
+            values="${values:+${values},}${{ secrets.chart_secret_values }}"
+          fi
+          echo "values=${values}" >> $GITHUB_ENV
+
+      - name: Create chart values files parameter
+        if: ${{ inputs.chart_values_file != '' || inputs.chart_values_files_template != '' }}
+        run: |
+          values="${{ inputs.chart_values_file }}"
+          secrets="${{ inputs.chart_values_files_template }}"
+          value_files=""
+          if [[ -n "$values" ]]; then
+            value_files="--values $values"
+          fi
+          if [[ -n "$secrets" ]]; then
+            if [[ -n "$value_files" ]]; then
+              value_files="$value_files --values templated-values.yml"
+            else
+              value_files="--values templated-values.yml"
+            fi
+          fi
+          echo "VALUE_FILES=${value_files}" >> $GITHUB_ENV
+
+      - name: Set chart repository name
+        run: |
+          chart_path="${{ inputs.chart_path }}"
+          chart_repo_name="${chart_path%%/*}"
+          echo "chart_repo_name=${chart_repo_name}" >> $GITHUB_ENV
+
+      - name: Add chart's repository
+        run: |
+          helm repo add ${{ env.chart_repo_name }} ${{ inputs.chart_repository }}
+          helm repo update
+
+      - name: Run Helm diff
+        id: helm_diff
+        run: |
+          if [ -n "${{ steps.prepare_values.outputs.values }}" ]; then
+            helm diff upgrade \
+              ${{ inputs.chart_name }} \
+              ${{ inputs.chart_path }} \
+               --version ${{ inputs.chart_version }} \
+               ${{ env.VALUE_FILES }} \
+               --set ${{ steps.prepare_values.outputs.values }} \
+               --namespace ${{ inputs.chart_namespace }} \
+               --suppress-output-line-regex "(app.kubernetes.io/version|chart):.*" \
+               --three-way-merge \
+               --suppress-secrets \
+               --output dyff >> diff.result
+          else
+            helm diff upgrade \
+              ${{ inputs.chart_name }} \
+              ${{ inputs.chart_path }} \
+              --version ${{ inputs.chart_version }} \
+              ${{ env.VALUE_FILES }} \
+              --namespace ${{ inputs.chart_namespace }} \
+              --suppress-output-line-regex "(app.kubernetes.io/version|chart):.*" \
+              --three-way-merge \
+              --suppress-secrets \
+              --output dyff > diff.result
+          fi
+
+      - name: Create the diff summary
+        uses: actions/github-script@v7
+        env:
+          DIFF: ${{ steps.helm_diff.outputs.diff }}
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            let diff = '';
+            const fs = require('fs');
+            if (fs.existsSync('diff.result')) {
+              diff = fs.readFileSync('diff.result', 'utf8');
+            }
+            
+            const output = `## Environment: \`${{ inputs.environment }}\`
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Workflow: \`${{ github.workflow }}\`*
+            
+            #### Helm Diff 📖\`${{ steps.helm_diff.outcome }}\`
+            <details><summary>Show Diff</summary>
+
+            \`\`\`\n${diff}\n\`\`\`
+
+            </details>
+            `;
+
+            fs.writeFileSync('./summary.md', output);
+      
+      - name: Write the step summary
+        run: cat ./summary.md >> $GITHUB_STEP_SUMMARY
+    
   deploy:
     runs-on: ubuntu-latest
+    if: ${{ contains(format('{0}/{1}', 'refs/heads', inputs.deploy_branch ), github.ref ) }}
     environment: ${{ inputs.environment }}
     permissions:
       id-token: write
