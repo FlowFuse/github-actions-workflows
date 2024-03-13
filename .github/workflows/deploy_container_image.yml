@@ -50,6 +50,10 @@ on:
       eks_cluster_name:
         description: 'EKS cluster name'
         required: true
+    outputs:
+      image:
+        description: 'Full image tag'
+        value: ${{ jobs.deploy.outputs.image }}
 
 jobs:
   deploy:
