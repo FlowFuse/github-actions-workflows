@@ -52,7 +52,7 @@ on:
         required: true
     outputs:
       image:
-        description: 'Image name ang tag'
+        description: 'Image name and tag'
         value: ${{ jobs.deploy.outputs.image }}
 
 jobs:
