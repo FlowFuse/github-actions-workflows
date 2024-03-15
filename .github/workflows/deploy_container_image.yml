@@ -50,6 +50,10 @@ on:
       eks_cluster_name:
         description: 'EKS cluster name'
         required: true
+    outputs:
+      image:
+        description: 'Image name and tag'
+        value: ${{ jobs.deploy.outputs.image }}
 
 jobs:
   deploy:
@@ -58,6 +62,8 @@ jobs:
     permissions:
       packages: read
       contents: read
+    outputs:
+      image: ${{ steps.set_outputs.outputs.image }}
     steps:      
       - name: Set unique image tag
         id: set-image-tag
@@ -129,3 +135,8 @@ jobs:
         run: |
           kubectl -n default rollout undo deployment/${{ inputs.deployment_name }}
           kubectl -n default rollout status deployment/${{ inputs.deployment_name }}
+
+      - name: Set workflow outputs
+        id: set_outputs
+        run: |
+          echo "image=${{ inputs.service_name }}:${{ inputs.image_tag_prefix }}${{ env.image_tag }}" >> $GITHUB_OUTPUT
