@@ -55,7 +55,7 @@ jobs:
           suffixes: ${{ inputs.architecture_suffixes}}
       
       - name: Prune old images
-        uses: actions/delete-package-versions@v4
+        uses: actions/delete-package-versions@v5
         with: 
           package-name: ${{ inputs.image_name }}
           package-type: 'container'
