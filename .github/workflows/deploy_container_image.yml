@@ -94,7 +94,7 @@ jobs:
           password: ${{ secrets.temporary_registry_token }}
 
       - name: Push image to ECR
-        uses: akhilerm/tag-push-action@v2.1.0
+        uses: akhilerm/tag-push-action@v2.2.0
         with:
           src: ${{ inputs.image }}
           dst: |
