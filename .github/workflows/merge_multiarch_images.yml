@@ -42,7 +42,7 @@ jobs:
           echo "repository_owner_lower=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
 
       - name: Login to temporary registry
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{github.actor}}
@@ -55,7 +55,7 @@ jobs:
           suffixes: ${{ inputs.architecture_suffixes}}
       
       - name: Prune old images
-        uses: actions/delete-package-versions@v4
+        uses: actions/delete-package-versions@v5
         with: 
           package-name: ${{ inputs.image_name }}
           package-type: 'container'
