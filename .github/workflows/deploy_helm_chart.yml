@@ -294,7 +294,7 @@ jobs:
           echo "VALUE_FILES=${value_files}" >> $GITHUB_ENV
 
       - name: Deploy Helm
-        uses: bitovi/github-actions-deploy-eks-helm@v1.2.8
+        uses: bitovi/github-actions-deploy-eks-helm@v1.2.9
         with:
           action: ${{ inputs.chart_action }}
           aws-region: ${{ inputs.cluster_region }}
