@@ -102,7 +102,7 @@ jobs:
         if: |
           inputs.publish_package ||
           inputs.build_package
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '16'
           registry-url: '${{ inputs.npm_registry_url }}'
