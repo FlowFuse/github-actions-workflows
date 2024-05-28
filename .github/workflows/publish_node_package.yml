@@ -70,7 +70,7 @@ jobs:
       release_name: ${{ env.release_name }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set release name
         id: set_release_name
