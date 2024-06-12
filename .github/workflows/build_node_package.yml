@@ -12,7 +12,7 @@ on:
         description: 'JSON array of Node.js versions and parameters'
         required: false
         type: string
-        default: '[{"version": "18", "test": true, "lint": true}]'
+        default: '[{"version": "18", "tests": true, "lint": true}]'
 
 jobs:
   build:
@@ -27,18 +27,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Use Node.js ${{ matrix.version}}
+      - name: Use Node.js ${{ matrix.node.version}}
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.version }}
+          node-version: ${{ matrix.node.version }}
   
       - name: Install Dependencies
         run: npm ci
   
       - name: Run lint
-        if: ${{ fromJson(matrix.lint) }}
+        if: ${{ fromJson(matrix.node.lint) }}
         run: npm run lint
   
       - name: Run tests
-        if: ${{ fromJson(matrix.test) }}
+        if: ${{ fromJson(matrix.node.tests) }}
         run: npm run test
