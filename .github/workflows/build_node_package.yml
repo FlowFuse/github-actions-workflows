@@ -8,11 +8,11 @@ on:
         required: false
         type: boolean
         default: false
-      node_version:
-        description: 'Node.js version'
-        required: false
+      node:
+        description: 'JSON array of Node.js versions and parameters'
+        required: true
         type: string
-        default: '[18]'
+        default: '[{"version": "18", "test": true, "lint": true}]'
 
 jobs:
   build:
@@ -20,23 +20,24 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-          node-version: ${{ fromJson(inputs.node_version)}}
+          node-version: ${{ fromJson(inputs.node)}}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Use Node.js ${{ matrix.node-version}}
+      - name: Use Node.js ${{ matrix.version}}
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: ${{ matrix.version }}
   
       - name: Install Dependencies
         run: npm ci
   
       - name: Run lint
+        if: ${{ matrix.lint }}
         run: npm run lint
   
       - name: Run tests
-        if: ${{ fromJson(inputs.run_tests)}}
+        if: ${{ matrix.test }}
         run: npm run test
