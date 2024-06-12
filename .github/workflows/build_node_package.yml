@@ -20,8 +20,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-          node-version: ${{ fromJson(inputs.node)}}
-    name: Build on ${{ matrix.version }}
+          node: ${{ fromJson(inputs.node)}}
+    name: Build on ${{ matrix.node.version }}
 
     steps:
       - name: Checkout
