@@ -3,11 +3,6 @@ name: Build and test npm package
 on:
   workflow_call:
     inputs:
-      run_tests:
-        description: 'Run tests'
-        required: false
-        type: boolean
-        default: false
       node:
         description: 'JSON array of Node.js versions and parameters'
         required: false
