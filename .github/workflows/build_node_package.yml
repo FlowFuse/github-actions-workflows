@@ -36,9 +36,9 @@ jobs:
         run: npm ci
   
       - name: Run lint
-        if: ${{ matrix.lint }}
+        if: ${{ fromJson(matrix.lint) }}
         run: npm run lint
   
       - name: Run tests
-        if: ${{ matrix.test }}
+        if: ${{ fromJson(matrix.test) }}
         run: npm run test
