@@ -10,7 +10,7 @@ on:
         default: false
       node:
         description: 'JSON array of Node.js versions and parameters'
-        required: true
+        required: false
         type: string
         default: '[{"version": "18", "test": true, "lint": true}]'
 
