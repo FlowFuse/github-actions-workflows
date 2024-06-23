@@ -3,33 +3,37 @@ name: Build and test npm package
 on:
   workflow_call:
     inputs:
-      run_tests:
-        description: 'Run tests'
+      node:
+        description: 'JSON array of Node.js versions and parameters'
         required: false
-        type: boolean
-        default: false
+        type: string
+        default: '[{"version": "18", "tests": true, "lint": true}]'
 
 jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-          node-version: [16.x]
+          node: ${{ fromJson(inputs.node)}}
+    name: Build on ${{ matrix.node.version }}
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Use Node.js ${{ inputs.node_version }}
-        uses: actions/setup-node@v3
+      - name: Use Node.js ${{ matrix.node.version}}
+        uses: actions/setup-node@v4
         with:
-          node-version: ${{ inputs.node_version }}
+          node-version: ${{ matrix.node.version }}
   
       - name: Install Dependencies
         run: npm ci
   
       - name: Run lint
+        if: ${{ fromJson(matrix.node.lint) }}
         run: npm run lint
   
       - name: Run tests
-        if: ${{ fromJson(inputs.run_tests)}}
+        if: ${{ fromJson(matrix.node.tests) }}
         run: npm run test
