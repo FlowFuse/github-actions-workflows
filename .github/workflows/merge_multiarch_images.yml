@@ -48,7 +48,7 @@ jobs:
           username: ${{github.actor}}
           password: ${{secrets.temporary_registry_token}}
 
-      - uses: int128/docker-manifest-create-action@v1
+      - uses: int128/docker-manifest-create-action@v2
         name: Merge and push
         with:
           tags: ghcr.io/${{ env.repository_owner_lower }}/${{ inputs.image_name }}:${{ inputs.image_tag_prefix }}main
