@@ -41,6 +41,11 @@ on:
         required: false
         type: string
         default: 'https://registry.npmjs.org/'
+      node_version:
+        description: 'Node.js version'
+        required: false
+        type: string
+        default: '16'
     secrets:
       npm_registry_token:
         description: 'NPM registry authentication token'
@@ -104,7 +109,7 @@ jobs:
           inputs.build_package
         uses: actions/setup-node@v4
         with:
-          node-version: '16'
+          node-version: ${{ inputs.node_version }}
           registry-url: '${{ inputs.npm_registry_url }}'
           scope: '@flowforge'
           always-auth: true
