@@ -45,7 +45,7 @@ on:
         description: 'Node.js version'
         required: false
         type: string
-        default: '16'
+        default: '18'
     secrets:
       npm_registry_token:
         description: 'NPM registry authentication token'
