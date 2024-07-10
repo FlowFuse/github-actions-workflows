@@ -327,7 +327,7 @@ jobs:
                   "type": "header",
                   "text": {
                     "type": "plain_text",
-                    "text": "${{ inputs.chart_name }} ${{ inputs.environment }} deployment started (In Progress)"",
+                    "text": "${{ inputs.chart_name }} ${{ inputs.environment }} deployment started (In Progress)",
                     "emoji": true
                   }
                 },
