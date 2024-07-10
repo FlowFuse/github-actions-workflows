@@ -373,9 +373,9 @@ jobs:
           helm-wait: true
           timeout: ${{ inputs.chart_timeout }}
       
-      - name: Deploy (simulate)
+      - name: Deploy (simulate failure)
         id: deploy2
-        run: sleep 15
+        run: sleep 15 && exit 1
 
       - name: Validate deployment
         if: ${{ inputs.validate_url != '' }}
