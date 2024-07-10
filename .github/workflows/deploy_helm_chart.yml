@@ -374,6 +374,7 @@ jobs:
           timeout: ${{ inputs.chart_timeout }}
       
       - name: Deploy (simulate)
+        id: deploy2
         run: sleep 15
 
       - name: Validate deployment
@@ -410,7 +411,7 @@ jobs:
                   "fields": [
                     {
                       "type": "mrkdwn",
-                      "text": "*Status:*\n${{ needs.deploy.result == 'success' && ':white_check_mark: Success' || ':x: Failure '}}"
+                      "text": "*Status:*\n${{ needs.deploy2.result == 'success' && ':white_check_mark: Success' || ':x: Failure '}}"
                     },
                     {
                       "type": "mrkdwn",
