@@ -388,9 +388,7 @@ jobs:
           retry-all: false
 
       - name: Update notification
-        if: |
-          ${{ fromJson( inputs.slack_notification_enabled ) }}  &&
-          ( success() || failure() )
+        if: ${{ always() && fromJson( inputs.slack_notification_enabled ) }}
         uses: slackapi/slack-github-action@v1.26.0
         with:
           channel-id: ${{ inputs.slack_channel_id }}
