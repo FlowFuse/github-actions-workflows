@@ -97,6 +97,9 @@ on:
       op_token:
         description: '1Password seervice account token'
         required: false
+      slack_token:
+        description: 'Slack token'
+        required: false
 
 jobs:
   diff:
@@ -348,7 +351,7 @@ jobs:
               ]
             }
         env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_BOT_TOKEN: ${{ secrets.slack_token }}
 
       - name: Deploy Helm
         uses: bitovi/github-actions-deploy-eks-helm@v1.2.10
@@ -417,6 +420,5 @@ jobs:
               ]
             }
         env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_GHBOT_TOKEN }}
-
-          
+          SLACK_BOT_TOKEN: ${{ secrets.slack_token }}
+         
