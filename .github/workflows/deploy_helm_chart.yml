@@ -336,7 +336,7 @@ jobs:
                   "fields": [
                     {
                       "type": "mrkdwn",
-                      "text": "*Status:*\n':large_yellow_square: In Progress'"
+                      "text": "*Status:*\n:large_yellow_square: In Progress"
                     },
                     {
                       "type": "mrkdwn",
@@ -401,7 +401,7 @@ jobs:
                   "type": "header",
                   "text": {
                     "type": "plain_text",
-                    "text": "${{ inputs.chart_name }} ${{ inputs.environment }} deployment finished (Completed)"",
+                    "text": "${{ inputs.chart_name }} ${{ inputs.environment }} deployment finished (Completed)",
                     "emoji": true
                   }
                 },
@@ -409,12 +409,12 @@ jobs:
                   "type": "section",
                   "fields": [
                     {
-                    "type": "mrkdwn",
-                    "text": "*Status:*\n${{ needs.deploy.result == 'success' && ':white_check_mark: Success' || ':x: Failure '}}"
+                      "type": "mrkdwn",
+                      "text": "*Status:*\n${{ needs.deploy.result == 'success' && ':white_check_mark: Success' || ':x: Failure '}}"
                     },
                     {
                       "type": "mrkdwn",
-                      "text": ""*Last Commit Message:*\n${{ env.LAST_COMMIT_MSG }}""
+                      "text": "*Last Commit Message:*\n${{ env.LAST_COMMIT_MSG }}"
                     },
                     {
                       "type": "mrkdwn",
