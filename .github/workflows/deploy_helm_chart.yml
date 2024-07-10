@@ -354,8 +354,6 @@ jobs:
           SLACK_BOT_TOKEN: ${{ secrets.slack_token }}
 
       - name: Deploy Helm
-        # for testing purposes
-        if: false 
         uses: bitovi/github-actions-deploy-eks-helm@v1.2.10
         id: deploy
         with:
@@ -372,10 +370,7 @@ jobs:
           atomic: true
           helm-wait: true
           timeout: ${{ inputs.chart_timeout }}
-      
-      - name: Deploy (simulate failure)
-        id: deploy2
-        run: sleep 15 && exit 1
+
 
       - name: Validate deployment
         if: ${{ inputs.validate_url != '' }}
