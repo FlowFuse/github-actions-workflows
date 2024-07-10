@@ -336,11 +336,11 @@ jobs:
                   "fields": [
                     {
                       "type": "mrkdwn",
-                      "text": "*Status:*\n$':large_yellow_square: In Progress'"
+                      "text": "*Status:*\n':large_yellow_square: In Progress'"
                     },
                     {
                       "type": "mrkdwn",
-                      "text": ""*Last Commit Message:*\n${{ env.LAST_COMMIT_MSG }}""
+                      "text": "*Last Commit Message:*\n${{ env.LAST_COMMIT_MSG }}"
                     },
                     {
                       "type": "mrkdwn",
