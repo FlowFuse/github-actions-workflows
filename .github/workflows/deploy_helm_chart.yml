@@ -317,7 +317,7 @@ jobs:
       - name: Send notification
         uses: slackapi/slack-github-action@v1.26.0
         id: send_notification
-        if: ${{ inputs.slack_notification_enabled }} == 'true'
+        if: ${{ fromJson( inputs.slack_notification_enabled ) }} 
         with:
           channel-id: ${{ inputs.slack_channel_id }}
           payload: |
@@ -389,7 +389,7 @@ jobs:
 
       - name: Update notification
         if: |
-          ${{ inputs.slack_notification_enabled }} == 'true' &&
+          ${{ fromJson( inputs.slack_notification_enabled ) }}  &&
           ( success() || failure() )
         uses: slackapi/slack-github-action@v1.26.0
         with:
