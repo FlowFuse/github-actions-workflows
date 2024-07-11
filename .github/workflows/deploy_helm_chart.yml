@@ -354,7 +354,7 @@ jobs:
           SLACK_BOT_TOKEN: ${{ secrets.slack_token }}
 
       - name: Deploy Helm
-        uses: bitovi/github-actions-deploy-eks-helm@v1.2.10
+        uses: bitovi/github-actions-deploy-eks-helm@v1.03
         id: deploy
         with:
           action: ${{ inputs.chart_action }}
