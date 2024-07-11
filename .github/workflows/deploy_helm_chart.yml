@@ -51,15 +51,15 @@ on:
         type: string
         required: false
         default: 'eu-west-1'
-      environment:
-        description: 'Environment to deploy to'
-        type: string
-        required: true
       deploy_branch:
         description: 'Branch from which helm chart will be installed'
         type: string
         required: false
         default: 'main'
+      environment:
+        description: 'Environment to deploy to'
+        type: string
+        required: true
       iam_role_name:
         description: 'Name of the IAM role to assume'
         type: string
@@ -70,6 +70,16 @@ on:
         type: string
         required: false
         default: 'v1.23.4'
+      slack_notification_enabled:
+        description: 'Enable slack notification'
+        type: boolean
+        required: false
+        default: false
+      slack_channel_id:
+        description: 'Slack channel ID'
+        type: string
+        required: false
+        default: 'C05Q84211L2'
       validate_url:
         description: 'The url(s) to validate after deployment. Multiple values example: "https://example.com|http://example.net"'
         type: string
@@ -86,6 +96,9 @@ on:
         required: false
       op_token:
         description: '1Password seervice account token'
+        required: false
+      slack_token:
+        description: 'Slack token'
         required: false
 
 jobs:
@@ -295,8 +308,54 @@ jobs:
           fi
           echo "VALUE_FILES=${value_files}" >> $GITHUB_ENV
 
+      - name: Fetch Last Commit Message
+        id: last_commit_msg
+        run: |
+          git fetch --depth=1 origin main
+          echo "LAST_COMMIT_MSG=$(git log --format=%B -n 1 FETCH_HEAD)" >> $GITHUB_ENV
+
+      - name: Send notification
+        uses: slackapi/slack-github-action@v1.26.0
+        id: send_notification
+        if: ${{ fromJson( inputs.slack_notification_enabled ) }} 
+        with:
+          channel-id: ${{ inputs.slack_channel_id }}
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "${{ inputs.chart_name }} ${{ inputs.environment }} deployment started (In Progress)",
+                    "emoji": true
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Status:*\n:large_yellow_square: In Progress"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Last Commit Message:*\n${{ env.LAST_COMMIT_MSG }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Workflow run:*\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View>"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.slack_token }}
+
       - name: Deploy Helm
         uses: bitovi/github-actions-deploy-eks-helm@v1.2.10
+        id: deploy
         with:
           action: ${{ inputs.chart_action }}
           aws-region: ${{ inputs.cluster_region }}
@@ -312,6 +371,7 @@ jobs:
           helm-wait: true
           timeout: ${{ inputs.chart_timeout }}
 
+
       - name: Validate deployment
         if: ${{ inputs.validate_url != '' }}
         uses: jtalk/url-health-check-action@v4
@@ -321,3 +381,43 @@ jobs:
           max-attempts: 3
           retry-delay: 10s
           retry-all: false
+
+      - name: Update notification
+        if: ${{ always() && fromJson( inputs.slack_notification_enabled ) }}
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          channel-id: ${{ inputs.slack_channel_id }}
+          update-ts: ${{ steps.send_notification.outputs.ts }}
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "${{ inputs.chart_name }} ${{ inputs.environment }} deployment finished (Completed)",
+                    "emoji": true
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Status:*\n${{ steps.deploy.outcome == 'success' && ':white_check_mark: Success' || ':x: Failure '}}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Last Commit Message:*\n${{ env.LAST_COMMIT_MSG }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Workflow run:*\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View>"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.slack_token }}
+         
