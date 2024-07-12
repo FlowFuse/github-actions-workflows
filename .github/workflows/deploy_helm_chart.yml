@@ -247,8 +247,13 @@ jobs:
 
             fs.writeFileSync('./summary.md', output);
       
+      - name: Add diff summary to pull request
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          filePath: ./summary.md
+
       - name: Write the step summary
-        run: cat ./summary.md >> $GITHUB_STEP_SUMMARY
+        run: cat  >> $GITHUB_STEP_SUMMARY
     
   deploy:
     runs-on: ubuntu-latest
