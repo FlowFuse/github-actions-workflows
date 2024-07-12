@@ -253,10 +253,6 @@ jobs:
         with:
           filePath: ./summary.md
           comment_tag: 'helm-diff-${{ inputs.environment }}'
-
-      - name: Write the step summary
-        if: github.event_name != 'pull_request'
-        run: cat  >> $GITHUB_STEP_SUMMARY
     
   deploy:
     runs-on: ubuntu-latest
