@@ -248,12 +248,14 @@ jobs:
             fs.writeFileSync('./summary.md', output);
       
       - name: Add diff summary to pull request
+        if: github.event_name == 'pull_request'
         uses: thollander/actions-comment-pull-request@v2
         with:
           filePath: ./summary.md
           comment_tag: 'helm-diff-${{ inputs.environment }}'
 
       - name: Write the step summary
+        if: github.event_name != 'pull_request'
         run: cat  >> $GITHUB_STEP_SUMMARY
     
   deploy:
