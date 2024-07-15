@@ -262,6 +262,7 @@ jobs:
       id-token: write
       contents: write
     steps:
+      - run: echo ${{ github.ref }}
       - name: Checkout
         uses: actions/checkout@v4
 
