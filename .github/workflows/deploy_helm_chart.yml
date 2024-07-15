@@ -111,7 +111,6 @@ jobs:
       id-token: write
       pull-requests: write
     steps:
-      - run: echo ${{ github.ref }}
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -263,7 +262,6 @@ jobs:
       id-token: write
       contents: write
     steps:
-      - run: echo ${{ github.ref }}
       - name: Checkout
         uses: actions/checkout@v4
 
