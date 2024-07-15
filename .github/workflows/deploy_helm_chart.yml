@@ -316,7 +316,7 @@ jobs:
         id: last_commit_msg
         run: |
           git fetch --depth=1 origin main
-          echo "LAST_COMMIT_MSG=$(git log --format=%B -n 1 FETCH_HEAD)" >> $GITHUB_ENV
+          echo 'LAST_COMMIT_MSG=$(git log --format=%B -n 1 FETCH_HEAD)' >> $GITHUB_ENV
 
       - name: Send notification
         uses: slackapi/slack-github-action@v1.26.0
