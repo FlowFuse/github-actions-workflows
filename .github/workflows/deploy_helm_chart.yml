@@ -2,6 +2,11 @@ name: Deploy helm chart to EKS cluster
 on:
   workflow_call:
     inputs:
+      annotate_grafana:
+        description: 'Annotate Grafana'
+        type: boolean
+        required: false
+        default: false
       chart_action:
         description: 'Helm action to perform'
         type: string
@@ -60,6 +65,10 @@ on:
         description: 'Environment to deploy to'
         type: string
         required: true
+      grafana_domain:
+        description: 'Grafana domain'
+        type: string
+        required: false
       iam_role_name:
         description: 'Name of the IAM role to assume'
         type: string
@@ -93,6 +102,9 @@ on:
         required: true
       chart_secret_values:
         description: 'Comma separated list of value set for helms which should not be exposed in runner logs. Example: "key1=value1,key2=value2"'
+        required: false
+      grafana_token:
+        description: 'Grafana service account token'
         required: false
       op_token:
         description: '1Password seervice account token'
@@ -386,6 +398,21 @@ jobs:
           max-attempts: 3
           retry-delay: 10s
           retry-all: false
+
+      - name: Annotate Grafana
+        if: ${{ fromJson( inputs.annotate_grafana ) }}
+        env:
+          GRAFANA_URL: ${{ inputs.grafana_domain }}
+          GRAFANA_TOKEN: ${{ secrets.grafana_token }}
+        run: |
+          curl -X POST "${GRAFANA_URL}/api/annotations" \
+          -H "Content-Type: application/json" \
+          -H "Authorization: Bearer ${GRAFANA_TOKEN}" \
+          -d '{
+            "time": '$(date +%s%3N)',
+            "tags": ["deployment", "github"],
+            "text": "New deployment from GitHub Actions"
+          }'
 
       - name: Update notification
         if: ${{ always() && fromJson( inputs.slack_notification_enabled ) }}
