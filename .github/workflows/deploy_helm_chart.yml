@@ -412,7 +412,7 @@ jobs:
           -d '{
             "time": '$(date +%s%3N)',
             "tags": ["deployment", "github", "${CHART"],
-            "text": "Deploy of ${{ env.CHART }} to ${{ env.ENVIRONMENT }} from GitHub Actions: ${{ env.LAST_COMMIT_MSG }}"
+            "text": "Deploy of ${{ env.CHART }} to ${{ env.ENVIRONMENT }} from GitHub Actions: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           }'
 
       - name: Update notification
