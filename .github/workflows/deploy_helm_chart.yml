@@ -106,7 +106,7 @@ on:
         description: 'Grafana service account token'
         required: false
       op_token:
-        description: '1Password seervice account token'
+        description: '1Password service account token'
         required: false
       slack_token:
         description: 'Slack token'
