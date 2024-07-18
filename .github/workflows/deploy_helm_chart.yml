@@ -411,7 +411,7 @@ jobs:
           -H "Authorization: Bearer ${GRAFANA_TOKEN}" \
           -d '{
             "time": '$(date +%s%3N)',
-            "tags": ["deployment", "github"],
+            "tags": ["deployment", "github", "${CHART"],
             "text": "Deploy of ${CHART} to ${ENVIRONMENT} from GitHub Actions: ${LAST_COMMIT_MSG}"
           }'
 
