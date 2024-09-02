@@ -331,7 +331,7 @@ jobs:
           echo "LAST_COMMIT_MSG=$LAST_COMMIT_MSG" >> $GITHUB_ENV
 
       - name: Send notification
-        uses: slackapi/slack-github-action@v1.26.0
+        uses: slackapi/slack-github-action@v1.27.0
         id: send_notification
         if: ${{ fromJson( inputs.slack_notification_enabled ) }} 
         with:
@@ -417,7 +417,7 @@ jobs:
 
       - name: Update notification
         if: ${{ always() && fromJson( inputs.slack_notification_enabled ) }}
-        uses: slackapi/slack-github-action@v1.26.0
+        uses: slackapi/slack-github-action@v1.27.0
         with:
           channel-id: ${{ inputs.slack_channel_id }}
           update-ts: ${{ steps.send_notification.outputs.ts }}
