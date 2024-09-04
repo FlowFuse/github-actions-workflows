@@ -3,6 +3,24 @@ name: Build container image
 on:
   workflow_call:
     inputs:
+      aws_access_key_id:
+        description: 'AWS access key ID'
+        type: string
+        required: false
+      build_context:
+        description: 'Path to the build context'
+        type: string
+        required: true
+      build_platform:
+        description: 'Platform to build the image for'
+        type: string
+        required: false
+        default: 'linux/amd64'
+      dockerfile_path:
+        description: 'Path to the Dockerfile, within $build_context, used for image build'
+        type: string
+        required: false
+        default: 'Dockerfile'
       image_name:
         description: 'Name of the image to build'
         required: true
@@ -12,39 +30,16 @@ on:
         required: false
         type: string
         default: ''
-      package_dependencies:
-        description: 'List of dependencies to update'
-        type: string
-        required: false
-        default: ''
-      build_context:
-        description: 'Path to the build context'
-        type: string
-        required: true
-      build_platforms:
-        description: 'Platforms to build the image for'
-        type: string
-        required: false
-        default: '["linux/amd64","linux/arm64"]'
-      build_platform:
-          description: 'Platform to build the image for'
-          type: string
-          required: false
-          default: 'linux/amd64'
-      dockerfile_path:
-        description: 'Path to the Dockerfile, within $build_context, used for image build'
-        type: string
-        required: false
-        default: 'Dockerfile'
       npm_registry_url:
         description: 'NPM registry URL'
         type: string
         required: false
         default: registry.npmjs.org
-      aws_access_key_id:
-        description: 'AWS access key ID'
+      package_dependencies:
+        description: 'List of dependencies to update'
         type: string
         required: false
+        default: ''
       scan_image:
         description: 'Scan the image for vulnerabilities'
         type: boolean
@@ -64,10 +59,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # strategy:
-    #   fail-fast: false
-    #   matrix:
-    #     platform: ${{ fromJson(inputs.build_platforms) }}
     permissions:
       packages: write
       contents: write
@@ -85,12 +76,6 @@ jobs:
 
       - name: Setup Docker buildx
         uses: docker/setup-buildx-action@v3
-
-      # - name: Set release name and image tag
-      #   run: | 
-      #     echo "release_name=nightly" >> $GITHUB_ENV
-      #     echo "platform_tag=$( echo ${{ matrix.platform }} | tr '/' '-' )" >> $GITHUB_ENV
-      #     echo "repository_owner_lower=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
 
       - name: Set release name and image tag
         run: | 
@@ -143,11 +128,6 @@ jobs:
           provenance: false
           build-args: |
             BUILD_TAG=${{ env.build_tag }}
-
-
-      # - name: Pull image
-      #   run: |
-      #     docker pull "ghcr.io/${{ env.repository_owner_lower }}/${{ inputs.image_name }}:${{ inputs.image_tag_prefix }}main-${{ env.platform_tag }}"
       
       - name: Scan container image for vulnerabilities
         if: ${{ fromJson(inputs.scan_image) }}
