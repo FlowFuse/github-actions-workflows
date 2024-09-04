@@ -26,6 +26,11 @@ on:
         type: string
         required: false
         default: '["linux/amd64","linux/arm64"]'
+      build_platform:
+          description: 'Platform to build the image for'
+          type: string
+          required: false
+          default: 'linux/amd64'
       dockerfile_path:
         description: 'Path to the Dockerfile, within $build_context, used for image build'
         type: string
@@ -51,20 +56,26 @@ on:
       temporary_registry_token:
         description: 'GitHub token'
         required: true
+    outputs:
+      image:
+        description: 'Full image tag'
+        value: ${{ jobs.build.outputs.image }}
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        platform: ${{ fromJson(inputs.build_platforms) }}
+    # strategy:
+    #   fail-fast: false
+    #   matrix:
+    #     platform: ${{ fromJson(inputs.build_platforms) }}
     permissions:
       packages: write
       contents: write
       checks: write
       pull-requests: write
       security-events: write
+    outputs:
+      image: ${{ steps.set_outputs.outputs.image }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -75,10 +86,15 @@ jobs:
       - name: Setup Docker buildx
         uses: docker/setup-buildx-action@v3
 
+      # - name: Set release name and image tag
+      #   run: | 
+      #     echo "release_name=nightly" >> $GITHUB_ENV
+      #     echo "platform_tag=$( echo ${{ matrix.platform }} | tr '/' '-' )" >> $GITHUB_ENV
+      #     echo "repository_owner_lower=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
+
       - name: Set release name and image tag
         run: | 
           echo "release_name=nightly" >> $GITHUB_ENV
-          echo "platform_tag=$( echo ${{ matrix.platform }} | tr '/' '-' )" >> $GITHUB_ENV
           echo "repository_owner_lower=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
           
       - name: Set build tag
@@ -121,15 +137,17 @@ jobs:
           context: ${{ inputs.build_context }}
           file: "${{ inputs.build_context }}/${{ inputs.dockerfile_path }}"
           tags: "ghcr.io/${{ env.repository_owner_lower }}/${{ inputs.image_name }}:${{ inputs.image_tag_prefix }}main-${{ env.platform_tag }}"
-          platforms: ${{ matrix.platform }}
+          platforms: ${{ inputs.build_platform}}
+          load: true
           push: true
           provenance: false
           build-args: |
             BUILD_TAG=${{ env.build_tag }}
 
-      - name: Pull image
-        run: |
-          docker pull "ghcr.io/${{ env.repository_owner_lower }}/${{ inputs.image_name }}:${{ inputs.image_tag_prefix }}main-${{ env.platform_tag }}"
+
+      # - name: Pull image
+      #   run: |
+      #     docker pull "ghcr.io/${{ env.repository_owner_lower }}/${{ inputs.image_name }}:${{ inputs.image_tag_prefix }}main-${{ env.platform_tag }}"
       
       - name: Scan container image for vulnerabilities
         if: ${{ fromJson(inputs.scan_image) }}
@@ -137,3 +155,8 @@ jobs:
         with:
           image_ref: "ghcr.io/${{ env.repository_owner_lower }}/${{ inputs.image_name }}:${{ inputs.image_tag_prefix }}main-${{ env.platform_tag }}"
           check_name: "${{ inputs.image_name }}:${{ inputs.image_tag_prefix }}main-${{ env.platform_tag }}"
+
+      - name: Set workflow outputs
+        id: set_outputs
+        run: |
+          echo "image=ghcr.io/${{ env.repository_owner_lower }}/${{ inputs.image_name }}:${{ inputs.image_tag_prefix }}main" >> $GITHUB_OUTPUT
