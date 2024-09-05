@@ -3,6 +3,11 @@ name: Build and publish npm package
 on:
   workflow_call:
     inputs:
+      branch_name:
+        description: 'Name of the branch to build the package from'
+        type: string
+        required: false
+        default: 'main'
       package_name:
         description: 'Name of the package to publish'
         type: string
@@ -76,6 +81,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch_name }}
+          path: ${{ inputs.working_directory}}
 
       - name: Set release name
         id: set_release_name
@@ -116,6 +124,7 @@ jobs:
 
       - name: Build package
         if: ${{ inputs.build_package }}
+        working-directory: ${{ inputs.working_directory }}
         run: |
           npm install --@flowforge:registry=${{ inputs.npm_registry_url }}
           npm run build
