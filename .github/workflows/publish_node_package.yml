@@ -8,6 +8,11 @@ on:
         type: string
         required: false
         default: 'main'
+      repository_name:
+        description: 'Name of the repository to build the package from'
+        type: string
+        required: false
+        default: ${{ github.repository }}
       package_name:
         description: 'Name of the package to publish'
         type: string
@@ -82,6 +87,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          repository: ${{ inputs.repository_name }}
           ref: ${{ inputs.branch_name }}
           path: ${{ inputs.working_directory}}
 
