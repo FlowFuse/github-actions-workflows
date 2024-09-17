@@ -121,7 +121,7 @@ jobs:
         with:
           context: ${{ inputs.build_context }}
           file: "${{ inputs.build_context }}/${{ inputs.dockerfile_path }}"
-          tags: "ghcr.io/${{ env.repository_owner_lower }}/${{ inputs.image_name }}:${{ inputs.image_tag_prefix }}main-${{ env.platform_tag }}"
+          tags: "ghcr.io/${{ env.repository_owner_lower }}/${{ inputs.image_name }}:${{ inputs.image_tag_prefix }}main"
           platforms: ${{ inputs.build_platform}}
           load: true
           push: true
@@ -133,8 +133,8 @@ jobs:
         if: ${{ fromJson(inputs.scan_image) }}
         uses: flowforge/github-actions-workflows/actions/scan_container_image@main
         with:
-          image_ref: "ghcr.io/${{ env.repository_owner_lower }}/${{ inputs.image_name }}:${{ inputs.image_tag_prefix }}main-${{ env.platform_tag }}"
-          check_name: "${{ inputs.image_name }}:${{ inputs.image_tag_prefix }}main-${{ env.platform_tag }}"
+          image_ref: "ghcr.io/${{ env.repository_owner_lower }}/${{ inputs.image_name }}:${{ inputs.image_tag_prefix }}main"
+          check_name: "${{ inputs.image_name }}:${{ inputs.image_tag_prefix }}main"
 
       - name: Set workflow outputs
         id: set_outputs
