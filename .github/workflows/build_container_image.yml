@@ -7,6 +7,11 @@ on:
         description: 'AWS access key ID'
         type: string
         required: false
+      build_arguments:
+        description: 'Build arguments'
+        type: string
+        required: false
+        default: ''
       build_context:
         description: 'Path to the build context'
         type: string
@@ -100,10 +105,11 @@ jobs:
           echo "## Packages used to build image" >> $GITHUB_STEP_SUMMARY
           for dependency in $(echo "${{ inputs.package_dependencies }}" | tr '\n' ' ')
           do
-            echo "Updating $dependency to ${{ env.release_name }}"
-            cat package.json | jq ".dependencies[\"$dependency\"] = \"${{ env.release_name }}\"" > package.json-patched
-            mv package.json-patched package.json
-            echo "### :package: $dependency version: $(npm show $dependency dist-tags --json | jq -r '.${{ env.release_name }}')" >> $GITHUB_STEP_SUMMARY
+            dependency_name=$(echo $dependency | cut -d'=' -f1)
+            dependency_version=$(echo $dependency | cut -d'=' -f2)
+            echo "Setting $dependency_name to $dependency_version"
+            npm pkg set dependencies.$dependency
+            echo "### :package: $dependency_name version: $dependency_version >> $GITHUB_STEP_SUMMARY
           done
           cat package.json        
       
@@ -126,8 +132,9 @@ jobs:
           load: true
           push: true
           provenance: false
-          build-args: |
-            BUILD_TAG=${{ env.build_tag }}
+          build-args: ${{ inputs.build_arguments }}
+          # build-args: |
+          #   BUILD_TAG=${{ env.build_tag }}
       
       - name: Scan container image for vulnerabilities
         if: ${{ fromJson(inputs.scan_image) }}
