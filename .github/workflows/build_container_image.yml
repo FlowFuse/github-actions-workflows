@@ -133,8 +133,6 @@ jobs:
           push: true
           provenance: false
           build-args: ${{ inputs.build_arguments }}
-          # build-args: |
-          #   BUILD_TAG=${{ env.build_tag }}
       
       - name: Scan container image for vulnerabilities
         if: ${{ fromJson(inputs.scan_image) }}
