@@ -111,11 +111,17 @@ jobs:
         run: |
           for dependency in $(echo "${{ inputs.package_dependencies }}" | tr '\n' ' ')
           do
-            echo "Updating $dependency to ${{ env.release_name }}"
-            cat package.json | jq ".dependencies[\"$dependency\"] = \"${{ env.release_name }}\"" > package.json-patched
-            mv package.json-patched package.json
+            dependency_name=$(echo $dependency | cut -d'=' -f1)
+            dependency_version=$(echo $dependency | cut -d'=' -f2)
+            if [ "$dependency_name" == "$dependency_version" ]; then
+              dependency_version="nightly"
+            fi
+            dependency_semver=$(npm view $dependency_name dist-tags --json | jq -r --arg version "$dependency_version" '.[$version]')
+            echo "Setting $dependency_name to $dependency_version"
+            npm pkg set dependencies.$dependency_name=$dependency_semver
+            echo "### :package: $dependency_name version: $dependency_semver" >> $GITHUB_STEP_SUMMARY
           done
-          cat package.json  
+          cat package.json
       
       - name: Configure node
         if: |
