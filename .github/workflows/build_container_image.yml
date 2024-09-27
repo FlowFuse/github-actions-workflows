@@ -109,7 +109,7 @@ jobs:
             fi
             dependency_semver=$(npm view $dependency_name dist-tags --json | jq -r --arg version "$dependency_version" '.[$version]')
             echo "Setting $dependency_name to $dependency_version"
-            npm pkg set dependencies.$dependency
+            npm pkg set dependencies.$dependency_name@$dependency_semver
             echo "### :package: $dependency_name version: $dependency_semver" >> $GITHUB_STEP_SUMMARY
           done
           cat package.json        
