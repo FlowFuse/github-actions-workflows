@@ -50,9 +50,6 @@ on:
         type: boolean
         default: false
     secrets:
-      npm_registry_auth_token:
-        description: 'NPM registry authentication token'
-        required: false
       temporary_registry_token:
         description: 'GitHub token'
         required: true
