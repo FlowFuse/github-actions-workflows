@@ -104,6 +104,9 @@ jobs:
           do
             dependency_name=$(echo $dependency | cut -d'=' -f1)
             dependency_version=$(echo $dependency | cut -d'=' -f2)
+            if [ -z "$dependency_version" ]; then
+              dependency_version="latest"
+            fi
             dependency_semver=$(npm view $dependency_name dist-tags --json | jq -r --arg version "$dependency_version" '.[$version]')
             echo "Setting $dependency_name to $dependency_version"
             npm pkg set dependencies.$dependency
