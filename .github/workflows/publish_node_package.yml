@@ -109,6 +109,7 @@ jobs:
         if: ${{ inputs.package_dependencies != '' }}
         working-directory: ${{ inputs.working_directory }}
         run: |
+          echo "## Dependencies used to build package" >> $GITHUB_STEP_SUMMARY
           for dependency in $(echo "${{ inputs.package_dependencies }}" | tr '\n' ' ')
           do
             dependency_name=$(echo $dependency | cut -d'=' -f1)
