@@ -3,26 +3,13 @@ name: Build and publish npm package
 on:
   workflow_call:
     inputs:
-      package_name:
-        description: 'Name of the package to publish'
-        type: string
-        required: true
-      release_name:
-        description: 'Name of the release.'
+      branch_name:
+        description: 'Name of the branch to build the package from'
         type: string
         required: false
-      package_dependencies:
-        description: 'List of dependencies to update'
-        type: string
-        required: false
-        default: ''
+        default: 'main'
       build_package:
         description: 'Build package before publishing'
-        required: false
-        type: boolean
-        default: false
-      publish_package:
-        description: 'Publish package to private registry'
         required: false
         type: boolean
         default: false
@@ -31,21 +18,44 @@ on:
         required: false
         type: boolean
         default: false
-      working_directory:
-        description: 'Working directory'
-        required: false
-        type: string
-        default: '.'
-      npm_registry_url:
-        description: 'NPM registry URL'
-        required: false
-        type: string
-        default: 'https://registry.npmjs.org/'
       node_version:
         description: 'Node.js version'
         required: false
         type: string
         default: '18'
+      npm_registry_url:
+        description: 'NPM registry URL'
+        required: false
+        type: string
+        default: 'https://registry.npmjs.org/'
+      package_dependencies:
+        description: 'List of dependencies to update'
+        type: string
+        required: false
+        default: ''
+      package_name:
+        description: 'Name of the package to publish'
+        type: string
+        required: true
+      publish_package:
+        description: 'Publish package to private registry'
+        required: false
+        type: boolean
+        default: false
+      release_name:
+        description: 'Name of the release.'
+        type: string
+        required: false
+      repository_name:
+        description: 'Name of the repository to build the package from'
+        type: string
+        required: false
+        default: ${{ github.repository }}
+      working_directory:
+        description: 'Working directory'
+        required: false
+        type: string
+        default: '.'
     secrets:
       npm_registry_token:
         description: 'NPM registry authentication token'
@@ -76,6 +86,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.repository_name }}
+          ref: ${{ inputs.branch_name }}
+          path: ${{ inputs.working_directory}}
 
       - name: Set release name
         id: set_release_name
@@ -95,13 +109,20 @@ jobs:
         if: ${{ inputs.package_dependencies != '' }}
         working-directory: ${{ inputs.working_directory }}
         run: |
+          echo "## Dependencies used to build package" >> $GITHUB_STEP_SUMMARY
           for dependency in $(echo "${{ inputs.package_dependencies }}" | tr '\n' ' ')
           do
-            echo "Updating $dependency to ${{ env.release_name }}"
-            cat package.json | jq ".dependencies[\"$dependency\"] = \"${{ env.release_name }}\"" > package.json-patched
-            mv package.json-patched package.json
+            dependency_name=$(echo $dependency | cut -d'=' -f1)
+            dependency_version=$(echo $dependency | cut -d'=' -f2)
+            if [ "$dependency_name" == "$dependency_version" ]; then
+              dependency_version="nightly"
+            fi
+            dependency_semver=$(npm view $dependency_name dist-tags --json | jq -r --arg version "$dependency_version" '.[$version]')
+            echo "Setting $dependency_name to $dependency_version"
+            npm pkg set dependencies.$dependency_name=$dependency_semver
+            echo "### :package: $dependency_name version: $dependency_semver" >> $GITHUB_STEP_SUMMARY
           done
-          cat package.json  
+          cat package.json
       
       - name: Configure node
         if: |
@@ -116,6 +137,7 @@ jobs:
 
       - name: Build package
         if: ${{ inputs.build_package }}
+        working-directory: ${{ inputs.working_directory }}
         run: |
           npm install --@flowforge:registry=${{ inputs.npm_registry_url }}
           npm run build
