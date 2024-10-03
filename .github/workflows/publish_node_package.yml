@@ -13,11 +13,6 @@ on:
         required: false
         type: boolean
         default: false
-      checkout_directory:
-        description: 'Directory to checkout the repository to'
-        required: false
-        type: string
-        default: '.'
       disable_ignore_scripts_on_publish:
         description: 'If false, add --ignore-scripts flag to npm publish command'
         required: false
@@ -105,13 +100,13 @@ jobs:
           fi
 
       - name: "Set package version"
-        working-directory: ${{ inputs.checkout_directory }}/${{ inputs.working_directory }}
+        working-directory: ${{ inputs.working_directory }}
         run: |
           npm version prerelease --preid `git rev-parse --short HEAD`-`date +%Y%m%d%H%M` --no-git-tag-version
 
       - name: Set dependecies versions
         if: ${{ inputs.package_dependencies != '' }}
-        working-directory: ${{ inputs.checkout_directory }}/${{ inputs.working_directory }}
+        working-directory: ${{ inputs.working_directory }}
         run: |
           echo "## Dependencies used to build package" >> $GITHUB_STEP_SUMMARY
           for dependency in $(echo "${{ inputs.package_dependencies }}" | tr '\n' ' ')
@@ -141,7 +136,7 @@ jobs:
 
       - name: Build package
         if: ${{ inputs.build_package }}
-        working-directory: ${{ inputs.checkout_directory }}/${{ inputs.working_directory }}
+        working-directory: ${{ inputs.working_directory }}
         run: |
           npm install --@flowforge:registry=${{ inputs.npm_registry_url }}
           npm run build
@@ -160,7 +155,7 @@ jobs:
 
       - name: Publish package
         if: ${{ inputs.publish_package }}
-        working-directory: ${{ inputs.checkout_directory }}/${{ inputs.working_directory }}
+        working-directory: $${{ inputs.working_directory }}
         run: |
           npm publish ${{ env.NPM_PUBLISH_PARAMETERS }} --tag ${{ env.release_name }}
         env:
