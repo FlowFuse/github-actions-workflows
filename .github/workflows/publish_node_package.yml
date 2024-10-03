@@ -52,7 +52,7 @@ on:
         required: false
         default: ${{ github.repository }}
       working_directory:
-        description: 'Working directory within $checkout_directory to run commands'
+        description: 'Working directory'
         required: false
         type: string
         default: '.'
