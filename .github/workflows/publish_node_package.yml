@@ -94,7 +94,6 @@ jobs:
         with:
           repository: ${{ inputs.repository_name }}
           ref: ${{ inputs.branch_name }}
-          path: ${{ inputs.checkout_directory}}
 
       - name: Set release name
         id: set_release_name
