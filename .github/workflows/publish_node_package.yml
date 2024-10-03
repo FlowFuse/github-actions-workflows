@@ -155,7 +155,7 @@ jobs:
 
       - name: Publish package
         if: ${{ inputs.publish_package }}
-        working-directory: $${{ inputs.working_directory }}
+        working-directory: ${{ inputs.working_directory }}
         run: |
           npm publish ${{ env.NPM_PUBLISH_PARAMETERS }} --tag ${{ env.release_name }}
         env:
