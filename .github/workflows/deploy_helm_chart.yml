@@ -216,6 +216,7 @@ jobs:
                --suppress-output-line-regex "(app.kubernetes.io/version|chart):.*" \
                --three-way-merge \
                --suppress-secrets \
+               --allow-unreleased \
                --dry-run=server \
                --output dyff >> diff.result
           else
@@ -228,6 +229,7 @@ jobs:
               --suppress-output-line-regex "(app.kubernetes.io/version|chart):.*" \
               --three-way-merge \
               --suppress-secrets \
+              --allow-unreleased \
               --dry-run=server \
               --output dyff > diff.result
           fi
