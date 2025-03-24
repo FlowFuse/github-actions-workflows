@@ -85,7 +85,7 @@ jobs:
       release_name: ${{ env.release_name }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           repository: ${{ inputs.repository_name }}
           ref: ${{ inputs.branch_name }}
@@ -127,7 +127,7 @@ jobs:
         if: |
           inputs.publish_package ||
           inputs.build_package
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
           node-version: ${{ inputs.node_version }}
           registry-url: '${{ inputs.npm_registry_url }}'
