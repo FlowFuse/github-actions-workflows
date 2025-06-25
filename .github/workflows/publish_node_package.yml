@@ -22,7 +22,7 @@ on:
         description: 'Node.js version'
         required: false
         type: string
-        default: '18'
+        default: '20'
       npm_registry_url:
         description: 'NPM registry URL'
         required: false
