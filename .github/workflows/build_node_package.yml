@@ -7,7 +7,7 @@ on:
         description: 'JSON array of Node.js versions and parameters'
         required: false
         type: string
-        default: '[{"version": "18", "tests": true, "lint": true}]'
+        default: '[{"version": "20", "tests": true, "lint": true}]'
 
 jobs:
   build:
