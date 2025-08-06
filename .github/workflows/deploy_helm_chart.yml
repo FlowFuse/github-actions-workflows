@@ -247,7 +247,7 @@ jobs:
               diff = fs.readFileSync('diff.result', 'utf8');
             }
             
-            const output = `## Environment: \`${{ inputs.environment }}\`
+            const output = `## Release: \`${{ inputs.chart_name }}\`, environment: \`${{ inputs.environment }}\`
             *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Workflow: \`${{ github.workflow }}\`*
             
             #### Helm Diff 📖\`${{ steps.helm_diff.outcome }}\`
