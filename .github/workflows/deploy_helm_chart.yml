@@ -265,7 +265,7 @@ jobs:
         uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b # v3.0.1
         with:
           file-path: ./summary.md
-          comment-tag: 'helm-diff-${{ inputs.environment }}'
+          comment-tag: '${{ inputs.chart_action }}-helm-diff-${{ inputs.environment }}'
     
   deploy:
     runs-on: ubuntu-latest
