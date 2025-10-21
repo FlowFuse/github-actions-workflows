@@ -3,6 +3,19 @@ name: Deploy container image to kubernetes cluster
 on:
   workflow_call:
     inputs:
+      aws_ecr_iam_role_name:
+        description: 'IAM role name for ECR push'
+        type: string
+        required: false
+      aws_eks_iam_role_name:
+        description: 'IAM role name for EKS access'
+        type: string
+        required: false
+      aws_region:
+        description: 'AWS region'
+        type: string
+        required: false
+        default: 'eu-west-1'
       deploy:
         description: 'Deploy to kubernetes cluster'
         type: boolean
@@ -38,11 +51,8 @@ on:
         required: false
         default: 'v1.23.4'
     secrets:
-      aws_access_key_id:
-        description: 'AWS access key ID'
-        required: true
-      aws_secret_access_key:
-        description: 'AWS secret access key'
+      aws_account_id:
+        description: 'AWS account ID'
         required: true
       temporary_registry_token:
         description: 'GitHub token'
@@ -62,6 +72,7 @@ jobs:
     permissions:
       packages: read
       contents: read
+      id-token: write
     outputs:
       image: ${{ steps.set_outputs.outputs.image }}
     steps:      
@@ -74,9 +85,10 @@ jobs:
         id: aws-config
         uses: aws-actions/configure-aws-credentials@ececac1a45f3b08a01d2dd070d28d111c5fe6722 # v4.1.0
         with:
-          aws-access-key-id: ${{ secrets.aws_access_key_id }}
-          aws-secret-access-key: ${{ secrets.aws_secret_access_key }}
-          aws-region: eu-west-1
+          role-to-assume: arn:aws:iam::${{ secrets.aws_account_id }}:role/${{ inputs.aws_ecr_iam_role_name }}
+          role-duration-seconds: 900
+          role-session-name: GithubActionsRoleSession
+          aws-region: ${{ inputs.aws_region }}
           mask-aws-account-id: true
       
       - name: Login to AWS ECR
@@ -105,11 +117,10 @@ jobs:
         if: ${{fromJson( inputs.deploy )}}
         uses: aws-actions/configure-aws-credentials@ececac1a45f3b08a01d2dd070d28d111c5fe6722 # v4.1.0
         with:
-          aws-access-key-id: ${{ secrets.aws_access_key_id }}
-          aws-secret-access-key: ${{ secrets.aws_secret_access_key }}
-          aws-region: eu-west-1
           role-to-assume: arn:aws:iam::${{ steps.aws-config.outputs.aws-account-id }}:role/K8sAdmin
-          role-duration-seconds: 1200
+          role-duration-seconds: 900
+          role-session-name: GithubActionsRoleSession
+          aws-region: ${{ inputs.aws_region }}
 
       - name: Setup kubectl
         if: ${{fromJson( inputs.deploy )}}
