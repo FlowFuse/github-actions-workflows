@@ -117,7 +117,7 @@ jobs:
         if: ${{fromJson( inputs.deploy )}}
         uses: aws-actions/configure-aws-credentials@ececac1a45f3b08a01d2dd070d28d111c5fe6722 # v4.1.0
         with:
-          role-to-assume: arn:aws:iam::${{ steps.aws-config.outputs.aws-account-id }}:role/K8sAdmin
+          role-to-assume: arn:aws:iam::${{ steps.aws-config.outputs.aws-account-id }}:role/${{ inputs.aws_eks_iam_role_name }}
           role-duration-seconds: 900
           role-session-name: GithubActionsRoleSession
           aws-region: ${{ inputs.aws_region }}
