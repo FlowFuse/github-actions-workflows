@@ -137,7 +137,7 @@ jobs:
       
       - name: Scan container image for vulnerabilities
         if: ${{ fromJson(inputs.scan_image) }}
-        uses: flowforge/github-actions-workflows/actions/scan_container_image@main
+        uses: flowforge/github-actions-workflows/actions/scan_container_image@chore-bump-containers-scan-deps
         with:
           image_ref: "ghcr.io/${{ env.repository_owner_lower }}/${{ inputs.image_name }}:${{ inputs.image_tag_prefix }}main"
           check_name: "${{ inputs.image_name }}:${{ inputs.image_tag_prefix }}main"
