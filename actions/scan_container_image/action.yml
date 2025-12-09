@@ -35,7 +35,7 @@ runs:
         fi
 
     - name: Scan container image for vulnerabilities
-      uses: aquasecurity/trivy-action@0.17.0
+      uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # v0.33.1
       with:
         image-ref: '${{ inputs.image_ref }}'
         format: 'sarif'
@@ -47,7 +47,7 @@ runs:
         scanners: '${{ inputs.security_checks }}'
 
     - name: Upload Trivy scan results to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@v3
+      uses: github/codeql-action/upload-sarif@fe4161a26a8629af62121b670040955b330f9af2 # v4.31.6
       with:
         sarif_file: '${{ inputs.check_name }}-trivy-results.sarif'
         category: '${{ inputs.check_name }} scanning'
