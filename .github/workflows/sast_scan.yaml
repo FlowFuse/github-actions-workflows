@@ -9,8 +9,8 @@ on:
         default: 'NONE'
 
 jobs:
-  trivy-scan:
-    name: Trivy Security Scan
+  codebase-scan:
+    name: Codebase Scan
     runs-on: ubuntu-latest
     permissions:
       contents: read
