@@ -1,0 +1,49 @@
+name: Codebase SAST Scan
+on:
+  workflow_call:
+    inputs:
+      fail_on_severity:
+        description: 'Fail the scan if vulnerabilities of this severity or higher are found. Valid values: CRITICAL, HIGH, MEDIUM, LOW, UNKNOWN, NONE'
+        required: false
+        type: string
+        default: 'NONE'
+
+jobs:
+  codebase-scan:
+    name: Codebase Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Cache vulnerability database
+        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+        with:
+          path: .cache/trivy
+          key: ${{ runner.os }}-trivy-db-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-trivy-db-
+
+      - name: Perform SAST scan
+        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # v0.33.1
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          trivy-config: '.github/trivy.yaml'
+          output: 'trivy-results.sarif'
+        env:
+          TRIVY_FAIL_ON_SEVERITY: ${{ inputs.fail_on_severity }}
+
+      - name: Upload scan results to GitHub
+        uses: github/codeql-action/upload-sarif@cdefb33c0f6224e58673d9004f47f7cb3e328b89 # v4.31.10
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+          category: 'trivy-sast'
