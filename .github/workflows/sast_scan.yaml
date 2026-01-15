@@ -61,13 +61,19 @@ jobs:
 
       - name: Upload scan results to PR
         uses: marocchino/sticky-pull-request-comment@773744901bac0e8cbb5a0dc842800d45e9b2b405 # v2.9.4
-        if: ${{ inputs.upload_results_to_pr && github.event_name == 'pull_request' }}
+        if: false
         with: 
           header: '## SAST Scan Results'
           path: 'trivy-results.sarif'
 
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v5
+        if: ${{ inputs.upload_results_to_pr && github.event_name == 'pull_request' }}
+        with:
+          report_paths: '**/trivy-results.sarif'
+
       - name: Publish Trivy Output to Summary
-        if: ${{ !inputs.upload_results_to_ghas }}
+        if: ${{ false }}
         run: |
           if [[ -s trivy-results.sarif ]]; then
             {
