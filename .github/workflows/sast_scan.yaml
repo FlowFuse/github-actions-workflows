@@ -27,6 +27,7 @@ jobs:
       security-events: write
       actions: read
       pull-requests: write
+      checks: write
     
     steps:
       - name: Checkout code
@@ -71,8 +72,10 @@ jobs:
         if: ${{ inputs.upload_results_to_pr && github.event_name == 'pull_request' }}
         with:
           report_paths: '**/trivy-results.sarif'
+          check_name: 'SAST Scan Report'
           comment: true
-          
+          detailed_summary: true
+
 
       - name: Publish Trivy Output to Summary
         if: ${{ false }}
