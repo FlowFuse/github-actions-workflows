@@ -71,6 +71,8 @@ jobs:
         if: ${{ inputs.upload_results_to_pr && github.event_name == 'pull_request' }}
         with:
           report_paths: '**/trivy-results.sarif'
+          comment: true
+          
 
       - name: Publish Trivy Output to Summary
         if: ${{ false }}
