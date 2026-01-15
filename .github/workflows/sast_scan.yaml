@@ -64,4 +64,19 @@ jobs:
         if: ${{ inputs.upload_results_to_pr && github.event_name == 'pull_request' }}
         with: 
           header: '## SAST Scan Results'
-          path: 'trivy-results.sarif' 
+          path: 'trivy-results.sarif'
+
+      - name: Publish Trivy Output to Summary
+        if: ${{ !inputs.upload_results_to_ghas }}
+        run: |
+          if [[ -s trivy-results.sarif ]]; then
+            {
+              echo "### Security Output"
+              echo "<details><summary>Click to expand</summary>"
+              echo ""
+              echo '```terraform'
+              cat trivy-results.sarif
+              echo '```'
+              echo "</details>"
+            } >> $GITHUB_STEP_SUMMARY
+          fi
