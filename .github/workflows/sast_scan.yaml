@@ -75,19 +75,3 @@ jobs:
           check_name: 'SAST Scan Report'
           comment: true
           detailed_summary: true
-
-
-      - name: Publish Trivy Output to Summary
-        if: ${{ inputs.upload_results_to_pr && github.event_name == 'pull_request' }}
-        run: |
-          if [[ -s trivy-results.sarif ]]; then
-            {
-              echo "### Security Output"
-              echo "<details><summary>Click to expand</summary>"
-              echo ""
-              echo '```terraform'
-              cat trivy-results.sarif
-              echo '```'
-              echo "</details>"
-            } >> $GITHUB_STEP_SUMMARY
-          fi
