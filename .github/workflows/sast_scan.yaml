@@ -66,12 +66,3 @@ jobs:
         with: 
           header: '## SAST Scan Results'
           path: 'trivy-results.sarif'
-
-      - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v5
-        if: false
-        with:
-          report_paths: '**/trivy-results.sarif'
-          check_name: 'SAST Scan Report'
-          comment: true
-          detailed_summary: true
