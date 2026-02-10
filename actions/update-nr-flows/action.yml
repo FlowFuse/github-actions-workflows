@@ -38,5 +38,5 @@ runs:
 
       TOKEN=`curl "$URL/node/${{ inputs.package }}" --fail -c cookies.txt | awk '/input name="_csrf/ {print $4 }' | awk -F'"' '{print $2; exit}'`
       curl -b cookies.txt -c cookies.txt --fail -H "Content-Type: application/x-www-form-urlencoded; charset=UTF-8" "$URL/add/node" --data-urlencode "_csrf=$TOKEN" --data-urlencode "module=${{ inputs.package }}"
-
+      rm -f cookies.txt
 
