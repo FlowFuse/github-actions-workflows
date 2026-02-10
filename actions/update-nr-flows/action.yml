@@ -1,0 +1,42 @@
+name: "Update Node-RED Catalogue"
+description: "Triggers update to latest published version"
+
+inputs:
+  package:
+    description: 'name of package to update'
+    required: true
+  version:
+    description: 'latest version of package'
+    required: true
+
+runs:
+  using: composite
+  steps:
+   - name: Update flows.nodered.org
+     shell: bash
+     run: |
+      URL=https://flows.nodered.org
+      COUNT=1
+      until [ $COUNT -gt 5 ]; do
+        sleep 10
+        LATEST=`npm info "${{ inputs.package }}" --json version | sed -e 's/"//g'`
+        echo "current version $LATEST"
+        if [[ "${{ inputs.version }}" == "$LATEST" ]]
+        then
+          break
+        fi
+        ((COUNT++))
+      done
+
+      if [ $COUNT -gt 5 ]
+      then
+        echo "timed out after 50 seconds" 
+        exit 1
+      fi
+
+      echo "new version available, triggering flows.nodered.org"
+
+      TOKEN=`curl "$URL/node/${{ inputs.package }}" -c cookies.txt | awk '/input name="_csrf/ {print $4 }' | awk -F'"' '{print $2; exit}'`
+      curl -b cookies.txt -c cookies.txt -H "Content-Type: application/x-www-form-urlencoded; charset=UTF-8" "$URL/add/node" --data-urlencode "_csrf=$TOKEN" --data-urlencode "module=${{ inputs.package }}"
+
+
