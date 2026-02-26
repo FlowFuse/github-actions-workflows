@@ -127,7 +127,14 @@ jobs:
             if [ "$dependency_name" == "$dependency_version" ]; then
               dependency_version="nightly"
             fi
-            dependency_semver=$(npm view $dependency_name dist-tags --json | jq -r --arg version "$dependency_version" '.[$version]')
+            dependency_semver=$(npm view "$dependency_name" dist-tags --json | jq -r --arg version "$dependency_version" '.[$version]')
+            if [ -z "$dependency_semver" ] || [ "$dependency_semver" = "null" ]; then
+              if [ "$dependency_version" = "nightly" ]; then
+                echo "Could not resolve $dependency_name@nightly, falling back to latest"
+                dependency_version="latest"
+                dependency_semver=$(npm view "$dependency_name" dist-tags --json | jq -r --arg version "$dependency_version" '.[$version]')
+              fi
+            fi
             if [ -z "$dependency_semver" ] || [ "$dependency_semver" = "null" ]; then
               echo "::error title=Dependency resolution failed::Could not resolve $dependency_name@$dependency_version."
               exit 1
