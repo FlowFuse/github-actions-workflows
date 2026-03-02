@@ -50,6 +50,7 @@ jobs:
           scan-ref: '.'
           trivy-config: '.github/trivy.yaml'
           output: 'trivy-results.sarif'
+          version: 'v0.69.2'
         env:
           TRIVY_FAIL_ON_SEVERITY: ${{ inputs.fail_on_severity }}
 
