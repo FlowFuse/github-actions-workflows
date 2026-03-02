@@ -50,7 +50,7 @@ jobs:
           scan-ref: '.'
           trivy-config: '.github/trivy.yaml'
           output: 'trivy-results.sarif'
-          version: 'v0.69.2'
+          version: 'v0.69.2' # https://github.com/aquasecurity/trivy-action/issues/512
         env:
           TRIVY_FAIL_ON_SEVERITY: ${{ inputs.fail_on_severity }}
 
