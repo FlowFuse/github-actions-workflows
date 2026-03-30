@@ -150,7 +150,7 @@ jobs:
           aws eks update-kubeconfig --region ${{ inputs.cluster_region }} --name ${{ secrets.cluster_name }}
 
       - name: Install 1Password CLI
-        uses: 1password/install-cli-action@143a85f84a90555d121cde2ff5872e393a47ab9f # v1.0.0
+        uses: 1password/install-cli-action@8d006a0d0a4fd505af7f7ce589e7f768385ff5e4 # v3.0.0
         with:
           version: 2.32.0
         
@@ -287,7 +287,7 @@ jobs:
           role-duration-seconds: 900
 
       - name: Install 1Password CLI
-        uses: 1password/install-cli-action@143a85f84a90555d121cde2ff5872e393a47ab9f # v1.0.0
+        uses: 1password/install-cli-action@8d006a0d0a4fd505af7f7ce589e7f768385ff5e4 # v3.0.0
         with:
           version: 2.25.0
       
