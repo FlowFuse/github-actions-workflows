@@ -411,7 +411,7 @@ jobs:
           payload: |
             channel: ${{ inputs.slack_channel_id }}
             ts: ${{ steps.send_notification.outputs.ts }}
-            blocks: |
+            blocks:
               - type: "header"
                 text:
                   type: "plain_text"
