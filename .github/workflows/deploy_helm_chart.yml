@@ -115,7 +115,7 @@ on:
 jobs:
   diff:
     runs-on: ubuntu-latest
-    # if: ${{ !contains(format('{0}/{1}', 'refs/heads', inputs.deploy_branch ), github.ref ) }}
+    if: ${{ !contains(format('{0}/{1}', 'refs/heads', inputs.deploy_branch ), github.ref ) }}
     environment: ${{ inputs.environment }}
     permissions:
       contents: read
@@ -269,7 +269,7 @@ jobs:
     
   deploy:
     runs-on: ubuntu-latest
-    if: ${{ contains(format('{0}/{1}', 'refs/heads', inputs.deploy_branch ), github.ref ) }}
+    # if: ${{ contains(format('{0}/{1}', 'refs/heads', inputs.deploy_branch ), github.ref ) }}
     environment: ${{ inputs.environment }}
     permissions:
       id-token: write
