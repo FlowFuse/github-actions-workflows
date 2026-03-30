@@ -338,7 +338,7 @@ jobs:
         if: ${{ fromJson( inputs.slack_notification_enabled ) }} 
         with:
           method: 'chat.postMessage'
-          token: ${{ secrets.SLACK_GHBOT_TOKEN }}
+          token: ${{ secrets.slack_token }}
           payload: |
             channel: ${{ inputs.slack_channel_id }}
             blocks:
@@ -407,7 +407,7 @@ jobs:
         uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 #3.0.1
         with:
           method: 'chat.update'
-          token: ${{ secrets.SLACK_GHBOT_TOKEN }}
+          token: ${{ secrets.slack_token }}
           payload: |
             channel: ${{ inputs.slack_channel_id }}
             ts: ${{ steps.send_notification.outputs.ts }}
