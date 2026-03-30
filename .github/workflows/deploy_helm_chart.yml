@@ -332,6 +332,30 @@ jobs:
           LAST_COMMIT_MSG=$(git log --format=%B -n 1 FETCH_HEAD | sed 's/`//g' | sed 's/"//g' | tr '\n' ' ')
           echo "LAST_COMMIT_MSG=$LAST_COMMIT_MSG" >> $GITHUB_ENV
 
+      # - name: Send notification
+      #   uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 #3.0.1
+      #   id: send_notification
+      #   if: ${{ fromJson( inputs.slack_notification_enabled ) }} 
+      #   with:
+      #     method: 'chat.postMessage'
+      #     token: ${{ secrets.slack_token }}
+      #     payload: |
+      #       channel: ${{ inputs.slack_channel_id }}
+      #       blocks:
+      #         - type: "header"
+      #           text:
+      #             type: "plain_text"
+      #             text: "${{ inputs.chart_name }} ${{ inputs.environment }} deployment started (In Progress)"
+      #             emoji: true
+      #         - type: "section"
+      #           fields:
+      #             - type: "mrkdwn"
+      #               text: "*Status:*\n:large_yellow_square: In Progress"
+      #             - type: "mrkdwn"
+      #               text: "*Last Commit Message:*\n${{ env.LAST_COMMIT_MSG }}"
+      #             - type: "mrkdwn"
+      #               text: "*Workflow run:*\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View>"
+
       - name: Send notification
         uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 #3.0.1
         id: send_notification
@@ -341,20 +365,13 @@ jobs:
           token: ${{ secrets.slack_token }}
           payload: |
             channel: ${{ inputs.slack_channel_id }}
-            blocks:
-              - type: "header"
-                text:
-                  type: "plain_text"
-                  text: "${{ inputs.chart_name }} ${{ inputs.environment }} deployment started (In Progress)"
-                  emoji: true
-              - type: "section"
+            text: "Deployment started :eyes:"
+            attachments:
+              - color: "dbab09"
                 fields:
-                  - type: "mrkdwn"
-                    text: "*Status:*\n:large_yellow_square: In Progress"
-                  - type: "mrkdwn"
-                    text: "*Last Commit Message:*\n${{ env.LAST_COMMIT_MSG }}"
-                  - type: "mrkdwn"
-                    text: "*Workflow run:*\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View>"
+                  - title: "Status"
+                    short: true
+                    value: "In Progress"
 
       - name: Deploy Helm
         uses: bitovi/github-actions-deploy-eks-helm@29f556cf128eb1b42f834caf13b60a630ee2a20b # v1.2.12
@@ -402,6 +419,30 @@ jobs:
             "text": "Deploy of ${{ env.CHART }} to ${{ env.ENVIRONMENT }} from GitHub Actions: ${{ env.LAST_COMMIT_MSG }}"
           }'
 
+      # - name: Update notification
+      #   if: ${{ always() && fromJson( inputs.slack_notification_enabled ) }}
+      #   uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 #3.0.1
+      #   with:
+      #     method: 'chat.update'
+      #     token: ${{ secrets.slack_token }}
+      #     payload: |
+      #       channel: ${{ inputs.slack_channel_id }}
+      #       ts: ${{ steps.send_notification.outputs.ts }}
+      #       blocks:
+      #         - type: "header"
+      #           text:
+      #             type: "plain_text"
+      #             text: "${{ inputs.chart_name }} ${{ inputs.environment }} deployment finished (Completed)"
+      #             emoji: true
+      #         - type: "section"
+      #           fields:
+      #             - type: "mrkdwn"
+      #               text: "*Status:*\n${{ steps.deploy.outcome == 'success' && ':white_check_mark: Success' || ':x: Failure '}}"
+      #             - type: "mrkdwn"
+      #               text: "*Last Commit Message:*\n${{ env.LAST_COMMIT_MSG }}"
+      #             - type: "mrkdwn"
+      #               text: "*Workflow run:*\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View>"
+
       - name: Update notification
         if: ${{ always() && fromJson( inputs.slack_notification_enabled ) }}
         uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 #3.0.1
@@ -411,18 +452,11 @@ jobs:
           payload: |
             channel: ${{ inputs.slack_channel_id }}
             ts: ${{ steps.send_notification.outputs.ts }}
-            blocks:
-              - type: "header"
-                text:
-                  type: "plain_text"
-                  text: "${{ inputs.chart_name }} ${{ inputs.environment }} deployment finished (Completed)"
-                  emoji: true
-              - type: "section"
+            text: "Deployment finished! :rocket:"
+            attachments:
+              - color: "28a745"
                 fields:
-                  - type: "mrkdwn"
-                    text: "*Status:*\n${{ steps.deploy.outcome == 'success' && ':white_check_mark: Success' || ':x: Failure '}}"
-                  - type: "mrkdwn"
-                    text: "*Last Commit Message:*\n${{ env.LAST_COMMIT_MSG }}"
-                  - type: "mrkdwn"
-                    text: "*Workflow run:*\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View>"
+                  - title: "Status"
+                    short: true
+                    value: "Completed"
          
