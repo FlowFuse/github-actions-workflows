@@ -425,4 +425,3 @@ jobs:
                     text: "*Last Commit Message:*\n${{ env.LAST_COMMIT_MSG }}"
                   - type: "mrkdwn"
                     text: "*Workflow run:*\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View>"
-         
