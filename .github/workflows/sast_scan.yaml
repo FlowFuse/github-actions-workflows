@@ -62,7 +62,7 @@ jobs:
           category: 'trivy-sast'
 
       - name: Upload scan results to PR
-        uses: marocchino/sticky-pull-request-comment@70d2764d1a7d5d9560b100cbea0077fc8f633987 # v3.0.2
+        uses: marocchino/sticky-pull-request-comment@0ea0beb66eb9baf113663a64ec522f60e49231c0 # v3.0.4
         if: ${{ inputs.upload_results_to_pr && github.event_name == 'pull_request' }}
         with: 
           header: '## SAST Scan Results'
