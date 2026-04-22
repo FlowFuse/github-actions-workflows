@@ -1,0 +1,52 @@
+name: Prepare release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Release Please
+        id: rp
+        uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4.4.1
+        with:
+          config-file: .github/release-please-config.json
+          manifest-file: .github/release-please-manifest.json
+
+      - name: Checkout
+        if: steps.rp.outputs.releases_created == 'true'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Fast-forward major/minor floats
+        if: steps.rp.outputs.releases_created == 'true'
+        env:
+          RP_OUTPUTS: ${{ toJSON(steps.rp.outputs) }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          echo "$RP_OUTPUTS" | jq -r '
+            (.paths_released | fromjson) as $paths
+            | $paths[] as $p
+            | "\(.[$p + "--tag_name"])\t\(.[$p + "--sha"])"
+          ' | while IFS=$'\t' read -r TAG SHA; do
+            COMP="${TAG%/*}"
+            VER="${TAG##*/v}"
+            MAJ="${VER%%.*}"
+            REST="${VER#*.}"
+            MIN="${REST%%.*}"
+            echo "Fast-forwarding ${COMP}/v${MAJ} and ${COMP}/v${MAJ}.${MIN} -> ${SHA}"
+            git tag -f "${COMP}/v${MAJ}" "${SHA}"
+            git tag -f "${COMP}/v${MAJ}.${MIN}" "${SHA}"
+            git push origin -f "${COMP}/v${MAJ}" "${COMP}/v${MAJ}.${MIN}"
+          done
