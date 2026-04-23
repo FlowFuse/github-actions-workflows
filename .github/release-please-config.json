@@ -1,0 +1,52 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "separator": "/",
+  "include-component-in-tag": true,
+  "include-v-in-tag": true,
+  "release-type": "simple",
+  "skip-github-release": true,
+  "changelog-path": "CHANGELOG.md",
+  "packages": {
+    ".github/workflows/build_container_image": {
+      "component": "build_container_image",
+      "include-paths": [".github/workflows/build_container_image.yml"]
+    },
+    ".github/workflows/build_node_package": {
+      "component": "build_node_package",
+      "include-paths": [".github/workflows/build_node_package.yml"]
+    },
+    ".github/workflows/build_node_package_with_pgsql": {
+      "component": "build_node_package_with_pgsql",
+      "include-paths": [".github/workflows/build_node_package_with_pgsql.yml"]
+    },
+    ".github/workflows/deploy_container_image": {
+      "component": "deploy_container_image",
+      "include-paths": [".github/workflows/deploy_container_image.yml"]
+    },
+    ".github/workflows/deploy_helm_chart": {
+      "component": "deploy_helm_chart",
+      "include-paths": [".github/workflows/deploy_helm_chart.yml"]
+    },
+    ".github/workflows/merge_multiarch_images": {
+      "component": "merge_multiarch_images",
+      "include-paths": [".github/workflows/merge_multiarch_images.yml"]
+    },
+    ".github/workflows/publish_node_package": {
+      "component": "publish_node_package",
+      "include-paths": [".github/workflows/publish_node_package.yml"]
+    },
+    ".github/workflows/sast_scan": {
+      "component": "sast_scan",
+      "include-paths": [".github/workflows/sast_scan.yaml"]
+    },
+    "actions/npm_test": {
+      "component": "npm_test"
+    },
+    "actions/scan_container_image": {
+      "component": "scan_container_image"
+    },
+    "actions/update-nr-flows": {
+      "component": "update-nr-flows"
+    }
+  }
+}
