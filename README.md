@@ -105,3 +105,77 @@ uses: FlowFuse/github-actions-workflows/.github/workflows/build_container_image.
 # Composite actions use the same pattern:
 uses: FlowFuse/github-actions-workflows/actions/npm_test@npm_test/v1
 ```
+
+### Adding a New Reusable Workflow or Composite Action
+
+When introducing a new component, it must be registered with Release Please
+so that it is versioned and tagged independently like the existing ones.
+
+1.  **Create the workflow or action file.**
+
+    *   Reusable workflow: place the YAML file at
+        `.github/workflows/<name>.yml`.
+    *   Composite action: create the directory `actions/<name>/` and add its
+        `action.yml` (plus any supporting files).
+    *   `<name>` must be unique across **all** workflows and actions — the
+        two share a flat tag namespace.
+
+2.  **Register the component in `.github/release-please-config.json`**
+    by adding a new entry under `packages`.
+
+    *   For a reusable workflow:
+
+        ```json
+        ".github/workflows/<name>": {
+          "component": "<name>",
+          "include-paths": [".github/workflows/<name>.yml"]
+        }
+        ```
+
+        The package key is a virtual path (no directory is created on
+        disk); `include-paths` scopes change detection to the single YAML
+        file.
+
+    *   For a composite action:
+
+        ```json
+        "actions/<name>": {
+          "component": "<name>"
+        }
+        ```
+
+        The package key is the action's real directory; `include-paths` is
+        not needed because any file under that directory is attributed to
+        the component.
+
+3.  **Seed the initial version in `.github/release-please-manifest.json`**
+    using the same key chosen in the previous step:
+
+    ```json
+    "<path-used-above>": "1.0.0"
+    ```
+
+4.  **Open the pull request with a Conventional Commit title**, for
+    example `feat: add <name> reusable workflow`.
+
+5.  **After merging the pull request, bootstrap the initial tags** for
+    the new component. They must exist before consumers can reference it
+    and before Release Please runs cleanly for the new entry:
+
+    ```bash
+    git fetch origin main
+    SHA=$(git rev-parse origin/main)
+    NAME="<name>"
+    git tag "${NAME}/v1.0.0" "${SHA}"
+    git tag "${NAME}/v1.0"   "${SHA}"
+    git tag "${NAME}/v1"     "${SHA}"
+    git push origin "${NAME}/v1.0.0" "${NAME}/v1.0" "${NAME}/v1"
+    ```
+
+    > If Release Please happens to run between the merge and this
+    > bootstrap (it triggers on every push to `main`), it may open a
+    > stray release pull request proposing an inflated first version for
+    > the new component, because it has no tag to use as a baseline.
+    > Simply close that pull request — the next Release Please run, once
+    > the bootstrap tags exist, will be a no-op for the new component.
+
