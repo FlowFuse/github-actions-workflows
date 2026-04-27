@@ -5,6 +5,7 @@
   "include-v-in-tag": true,
   "release-type": "simple",
   "skip-github-release": true,
+  "separate-pull-requests": true,
   "changelog-path": "CHANGELOG.md",
   "changelog-sections": [
     { "type": "feat", "section": "Features" },
