@@ -4,3 +4,7 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    open-pull-requests-limit: 25
+    commit-message:
+      prefix: "chore"
+      include: "scope"
