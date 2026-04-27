@@ -1,0 +1,13 @@
+{
+  ".github/workflows/build_container_image": "1.0.0",
+  ".github/workflows/build_node_package": "1.0.0",
+  ".github/workflows/build_node_package_with_pgsql": "1.0.0",
+  ".github/workflows/deploy_container_image": "1.0.0",
+  ".github/workflows/deploy_helm_chart": "1.0.0",
+  ".github/workflows/merge_multiarch_images": "1.0.0",
+  ".github/workflows/publish_node_package": "1.0.0",
+  ".github/workflows/sast_scan": "1.0.0",
+  "actions/npm_test": "1.0.0",
+  "actions/scan_container_image": "1.0.0",
+  "actions/update-nr-flows": "1.0.0"
+}

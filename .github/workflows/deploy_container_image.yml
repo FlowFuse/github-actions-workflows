@@ -93,7 +93,7 @@ jobs:
       
       - name: Login to AWS ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@f2e9fc6c2b355c1890b65e6f6f0e2ac3e6e22f78 # v2.1.2
+        uses: aws-actions/amazon-ecr-login@376925c9d111252e87ae59691e5a442dd100ef6a # v2.1.3
         with:
           mask-password: 'true'
 
@@ -124,7 +124,7 @@ jobs:
 
       - name: Setup kubectl
         if: ${{fromJson( inputs.deploy )}}
-        uses: azure/setup-kubectl@15650b3ad78fff148532a140b8a4c821796b2d7b # v5.0.0
+        uses: azure/setup-kubectl@829323503d1be3d00ca8346e5391ca0b07a9ab0d # v5.1.0
         with:
           version: ${{ inputs.kubectl_version }}
 
