@@ -1,0 +1,67 @@
+name: Release workflows/actions
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Release ${{ matrix.component.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        component:
+          - { name: build_container_image, path: .github/workflows/build_container_image.yml }
+          - { name: build_node_package_with_pgsql,  path: .github/workflows/build_node_package_with_pgsql.yml }
+          - { name: build_node_package, path: .github/workflows/build_node_package.yml }
+          - { name: deploy_container_image, path: .github/workflows/deploy_container_image.yml }
+          - { name: deploy_helm_chart, path: .github/workflows/deploy_helm_chart.yml }
+          - { name: merge_multiarch_images, path: .github/workflows/merge_multiarch_images.yml }
+          - { name: publish_node_package, path: .github/workflows/publish_node_package.yml }
+          - { name: sast_scan, path: .github/workflows/sast_scan.yml }
+          - { name: npm_test,            path: actions/npm_test }
+          - { name: scan_container_image, path: actions/scan_container_image }
+          - { name: update-nr-flows, path: actions/update-nr-flows }
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Compute next version
+        id: compute-next-version
+        env:
+          COMPONENT: ${{ matrix.component.name }}
+          INCLUDE_PATH: ${{ matrix.component.path }}
+        run: bash .github/scripts/compute-next-version.sh
+
+      - name: Tag
+        if: steps.compute-next-version.outputs.release == 'true'
+        env:
+          TAG: ${{ steps.compute-next-version.outputs.tag }}
+          COMPONENT: ${{ matrix.component.name }}
+          VERSION: ${{ steps.compute-next-version.outputs.version }}
+        run: |
+          set -euo pipefail
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          MAJOR="${VERSION%%.*}"
+          REST="${VERSION#*.}"
+          MINOR="${REST%%.*}"
+
+          git tag -a "$TAG" -m "$TAG"
+          git push origin "$TAG"
+
+          git tag -f "${COMPONENT}/v${MAJOR}"
+          git tag -f "${COMPONENT}/v${MAJOR}.${MINOR}"
+          git push origin -f "${COMPONENT}/v${MAJOR}" "${COMPONENT}/v${MAJOR}.${MINOR}"
