@@ -333,7 +333,7 @@ jobs:
           echo "LAST_COMMIT_MSG=$LAST_COMMIT_MSG" >> $GITHUB_ENV
 
       - name: Send notification
-        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 #3.0.1
+        uses: slackapi/slack-github-action@03ea5433c137af7c0495bc0cad1af10403fc800c #3.0.2
         id: send_notification
         if: ${{ fromJson( inputs.slack_notification_enabled ) }} 
         with:
@@ -404,7 +404,7 @@ jobs:
 
       - name: Update notification
         if: ${{ always() && fromJson( inputs.slack_notification_enabled ) }}
-        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 #3.0.1
+        uses: slackapi/slack-github-action@03ea5433c137af7c0495bc0cad1af10403fc800c #3.0.2
         with:
           method: 'chat.update'
           token: ${{ secrets.slack_token }}
