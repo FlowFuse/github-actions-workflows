@@ -21,14 +21,14 @@ jobs:
       matrix:
         component:
           - { name: build_container_image, path: .github/workflows/build_container_image.yml }
-          - { name: build_node_package_with_pgsql,  path: .github/workflows/build_node_package_with_pgsql.yml }
           - { name: build_node_package, path: .github/workflows/build_node_package.yml }
+          - { name: build_node_package_with_pgsql, path: .github/workflows/build_node_package_with_pgsql.yml }
           - { name: deploy_container_image, path: .github/workflows/deploy_container_image.yml }
           - { name: deploy_helm_chart, path: .github/workflows/deploy_helm_chart.yml }
           - { name: merge_multiarch_images, path: .github/workflows/merge_multiarch_images.yml }
           - { name: publish_node_package, path: .github/workflows/publish_node_package.yml }
-          - { name: sast_scan, path: .github/workflows/sast_scan.yml }
-          - { name: npm_test,            path: actions/npm_test }
+          - { name: sast_scan, path: .github/workflows/sast_scan.yaml }
+          - { name: npm_test, path: actions/npm_test }
           - { name: scan_container_image, path: actions/scan_container_image }
           - { name: update-nr-flows, path: actions/update-nr-flows }
     steps:
