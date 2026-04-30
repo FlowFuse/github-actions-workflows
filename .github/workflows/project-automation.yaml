@@ -5,10 +5,9 @@ on:
     secrets:
       app-client-id:
         required: true
-      app-client-key:
+      app-private-key:
         required: true
-      token:
-        required: true
+
 jobs:
   add-to-project-board:
     name: Add issue to project
@@ -22,7 +21,7 @@ jobs:
         uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3.1.1
         with:
           client-id: ${{ secrets.app-client-id }}
-          private-key: ${{ secrets.app-client-key }}
+          private-key: ${{ secrets.app-private-key }}
           owner: ${{ github.repository_owner }}
       - uses: actions/add-to-project@244f685bbc3b7adfa8466e08b698b5577571133e # v1.0.2
         with:
@@ -38,7 +37,7 @@ jobs:
         uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3.1.1
         with:
           client-id: ${{ secrets.app-client-id }}
-          private-key: ${{ secrets.app-client-key }}
+          private-key: ${{ secrets.app-private-key }}
           owner: ${{ github.repository_owner }}
       - uses: actions/add-to-project@244f685bbc3b7adfa8466e08b698b5577571133e # v1.0.2
         with:
@@ -57,10 +56,10 @@ jobs:
         uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3.1.1
         with:
           client-id: ${{ secrets.app-client-id }}
-          private-key: ${{ secrets.app-client-key }}
+          private-key: ${{ secrets.app-private-key }}
           owner: ${{ github.repository_owner }}
       - uses: actions/add-to-project@244f685bbc3b7adfa8466e08b698b5577571133e # v1.0.2
         with:
           labeled: needs-triage
           project-url: https://github.com/orgs/FlowFuse/projects/15
-          github-token: ${{ secrets.token }}
+          github-token: ${{ steps.generate_token.outputs.token }}
