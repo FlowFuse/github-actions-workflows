@@ -7,8 +7,7 @@ on:
         required: true
       app-client-key:
         required: true
-      token:
-        required: true
+
 jobs:
   add-to-project-board:
     name: Add issue to project
