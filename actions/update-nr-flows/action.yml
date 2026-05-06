@@ -16,12 +16,13 @@ runs:
       shell: bash
       run: |
         URL=https://flows.nodered.org
+        VERSION=$(echo "${{ inputs.version }}" | sed -e 's/^[^0-9]*//')
         COUNT=1
         until [ $COUNT -gt 5 ]; do
           sleep 10
           LATEST=`npm info "${{ inputs.package }}" --json version | sed -e 's/"//g'`
           echo "current version $LATEST"
-          if [[ "${{ inputs.version }}" == "$LATEST" ]]
+          if [[ "$VERSION" == "$LATEST" ]]
           then
             break
           fi
