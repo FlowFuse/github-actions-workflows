@@ -1,0 +1,334 @@
+name: Recurring Sprint Issue
+
+# Reusable workflow that opens a weekly issue for the NEXT sprint and closes
+# the equivalent issue from the CURRENT sprint.
+
+on:
+  workflow_call:
+    inputs:
+      issue_title_base:
+        description: "Base issue title; the sprint name is appended automatically. For example, 'Sales Rotation' or 'Dependabot Triage'"
+        type: string
+        required: true
+      body_template_path:
+        description: "Path to a markdown template used as the issue body"
+        type: string
+        required: true
+      subject:
+        description: "Human-readable name used in the auto-close comment"
+        type: string
+        required: true
+      labels:
+        description: "Comma-separated labels applied to the created issue."
+        type: string
+        required: false
+        default: "task,time:4h"
+      project_number:
+        description: "Org ProjectV2 number the issue is added to."
+        type: number
+        required: false
+        default: 1
+      sprint_field_name:
+        description: "Name of the iteration (Sprint) field in the project."
+        type: string
+        required: false
+        default: "Sprint"
+      dry_run:
+        description: "Dry run: log intended actions without creating, modifying, or closing any issues."
+        type: boolean
+        required: false
+        default: false
+    secrets:
+      # App token required: GITHUB_TOKEN can't access org ProjectV2.
+      # App needs Repo Issues+Contents and Org Projects (read/write).
+      GH_BOT_APP_ID:
+        description: "GitHub App client/app ID used to mint an installation token."
+        required: true
+      GH_BOT_APP_KEY:
+        description: "GitHub App private key used to mint an installation token."
+        required: true
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  open-issue:
+    name: Open sprint rotation issue
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Generate a token
+        id: generate_token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.GH_BOT_APP_ID }}
+          private-key: ${{ secrets.GH_BOT_APP_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+
+      - name: Create weekly sprint rotation issue
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
+          TITLE_BASE: ${{ inputs.issue_title_base }}
+          BODY_TEMPLATE_PATH: ${{ inputs.body_template_path }}
+          LABELS: ${{ inputs.labels }}
+          PROJECT_NUMBER: ${{ inputs.project_number }}
+          SPRINT_FIELD_NAME: ${{ inputs.sprint_field_name }}
+        with:
+          github-token: ${{ steps.generate_token.outputs.token }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const projectNumber = Number(process.env.PROJECT_NUMBER);
+            const sprintFieldName = process.env.SPRINT_FIELD_NAME;
+            const titleBase = process.env.TITLE_BASE;
+            const labels = process.env.LABELS.split(",").map((l) => l.trim()).filter(Boolean);
+            const dryRun = process.env.DRY_RUN === "true";
+
+            const today = new Date();
+            if (dryRun) core.info("DRY RUN: no issues will be created or modified.");
+
+            // --- Step 1: Resolve the project and the NEXT sprint ----------
+            // The sprint name already encodes the milestone, so it is the only
+            // version marker we need. We pick the iteration after the current
+            // one (the sprint that follows today's active iteration).
+            core.info("Step 1: Resolving project and next sprint...");
+            let projectId = null;
+            let sprintFieldId = null;
+            let nextSprint = null;
+            try {
+              const data = await github.graphql(`
+                query($org: String!, $number: Int!, $field: String!) {
+                  organization(login: $org) {
+                    projectV2(number: $number) {
+                      id
+                      field(name: $field) {
+                        ... on ProjectV2IterationField {
+                          id
+                          configuration {
+                            iterations { id title startDate duration }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              `, { org: owner, number: projectNumber, field: sprintFieldName });
+
+              const project = data.organization.projectV2;
+              projectId = project.id;
+              const field = project.field;
+              const iterations = field?.configuration?.iterations || [];
+              if (!field?.id || iterations.length === 0) {
+                core.warning(`Sprint field "${sprintFieldName}" has no upcoming iterations.`);
+              } else {
+                sprintFieldId = field.id;
+                // Iterations are ordered chronologically. Find the one that
+                // contains today, then take the one immediately after it.
+                const contains = (it) => {
+                  const start = new Date(it.startDate);
+                  const end = new Date(start);
+                  end.setUTCDate(end.getUTCDate() + it.duration);
+                  return today >= start && today < end;
+                };
+                const currentIndex = iterations.findIndex(contains);
+                nextSprint =
+                  currentIndex >= 0
+                    ? iterations[currentIndex + 1]
+                    : iterations.find((it) => new Date(it.startDate) > today);
+                if (nextSprint) {
+                  core.info(`Next sprint: ${nextSprint.title} (${nextSprint.startDate})`);
+                } else {
+                  core.warning("No sprint after the current one is configured.");
+                }
+              }
+            } catch (e) {
+              core.warning(`Could not resolve project/sprint: ${e.message}`);
+            }
+
+            // --- Step 2: Build title and dedupe ----------------------------
+            const titleSuffix = nextSprint ? ` (${nextSprint.title})` : "";
+            const title = `${titleBase}${titleSuffix}`;
+
+            core.info("Step 2: Checking for an existing open issue...");
+            const existing = await github.rest.search.issuesAndPullRequests({
+              q: `repo:${owner}/${repo} is:issue is:open in:title "${title}"`
+            });
+            if (existing.data.total_count > 0) {
+              core.info(`Issue already exists: ${title}`);
+              return;
+            }
+
+            // --- Step 3: Create the issue ----------------------------------
+            // The issue body is read from a checked-in markdown template. It
+            // includes the @team mention used to notify the engineering team,
+            // since GitHub issues cannot be assigned to a team directly.
+            const fs = require("fs");
+            const body = fs.readFileSync(process.env.BODY_TEMPLATE_PATH, "utf8");
+
+            if (dryRun) {
+              core.info(`DRY RUN: would create issue "${title}" with labels [${labels.join(", ")}].`);
+              core.info(`DRY RUN: would add it to project #${projectNumber}` +
+                (nextSprint ? ` and set sprint to "${nextSprint.title}".` : "."));
+              return;
+            }
+
+            core.info("Step 3: Creating issue...");
+            const issue = await github.rest.issues.create({
+              owner,
+              repo,
+              title,
+              body,
+              labels
+            });
+            core.info(`Issue created: ${issue.data.html_url}`);
+
+            // --- Step 4: Add the issue to the project ----------------------
+            let itemId = null;
+            if (projectId) {
+              core.info("Step 4: Adding issue to project...");
+              try {
+                const added = await github.graphql(`
+                  mutation($projectId: ID!, $contentId: ID!) {
+                    addProjectV2ItemById(input: { projectId: $projectId, contentId: $contentId }) {
+                      item { id }
+                    }
+                  }
+                `, { projectId, contentId: issue.data.node_id });
+                itemId = added.addProjectV2ItemById.item.id;
+                core.info("Issue added to 🛠 Development project.");
+              } catch (e) {
+                core.warning(`Could not add issue to project: ${e.message}`);
+              }
+            }
+
+            // --- Step 5: Set the Sprint to the next iteration --------------
+            if (itemId && sprintFieldId && nextSprint) {
+              core.info("Step 5: Setting sprint...");
+              try {
+                await github.graphql(`
+                  mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $iterationId: String!) {
+                    updateProjectV2ItemFieldValue(input: {
+                      projectId: $projectId,
+                      itemId: $itemId,
+                      fieldId: $fieldId,
+                      value: { iterationId: $iterationId }
+                    }) { projectV2Item { id } }
+                  }
+                `, { projectId, itemId, fieldId: sprintFieldId, iterationId: nextSprint.id });
+                core.info(`Sprint set to ${nextSprint.title}.`);
+              } catch (e) {
+                core.warning(`Could not set sprint: ${e.message}`);
+              }
+            }
+
+            core.info("Done.");
+
+  close-previous-issue:
+    name: Close current sprint's issue
+    needs: open-issue
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate a token
+        id: generate_token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.GH_BOT_APP_ID }}
+          private-key: ${{ secrets.GH_BOT_APP_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+
+      - name: Close the current sprint's issue
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
+          TITLE_BASE: ${{ inputs.issue_title_base }}
+          SUBJECT: ${{ inputs.subject }}
+          PROJECT_NUMBER: ${{ inputs.project_number }}
+          SPRINT_FIELD_NAME: ${{ inputs.sprint_field_name }}
+        with:
+          github-token: ${{ steps.generate_token.outputs.token }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const projectNumber = Number(process.env.PROJECT_NUMBER);
+            const sprintFieldName = process.env.SPRINT_FIELD_NAME;
+            const titleBase = process.env.TITLE_BASE;
+            const subject = process.env.SUBJECT;
+            const dryRun = process.env.DRY_RUN === "true";
+
+            const today = new Date();
+            if (dryRun) core.info("DRY RUN: no issues will be closed.");
+
+            // --- Step 1: Resolve the CURRENT sprint (containing today) -----
+            core.info("Step 1: Resolving current sprint...");
+            let currentSprint = null;
+            try {
+              const data = await github.graphql(`
+                query($org: String!, $number: Int!, $field: String!) {
+                  organization(login: $org) {
+                    projectV2(number: $number) {
+                      field(name: $field) {
+                        ... on ProjectV2IterationField {
+                          configuration {
+                            iterations { title startDate duration }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              `, { org: owner, number: projectNumber, field: sprintFieldName });
+
+              const iterations = data.organization.projectV2.field?.configuration?.iterations || [];
+              currentSprint = iterations.find((it) => {
+                const start = new Date(it.startDate);
+                const end = new Date(start);
+                end.setUTCDate(end.getUTCDate() + it.duration);
+                return today >= start && today < end;
+              });
+            } catch (e) {
+              core.warning(`Could not resolve current sprint: ${e.message}`);
+            }
+
+            if (!currentSprint) {
+              core.warning("No current sprint found; nothing to close.");
+              return;
+            }
+
+            // --- Step 2: Find and close the matching open issue -----------
+            const title = `${titleBase} (${currentSprint.title})`;
+            core.info(`Step 2: Looking for open issue "${title}"...`);
+            const found = await github.rest.search.issuesAndPullRequests({
+              q: `repo:${owner}/${repo} is:issue is:open in:title "${title}"`
+            });
+
+            const match = found.data.items.find((i) => i.title === title);
+            if (!match) {
+              core.info("No matching open issue to close.");
+              return;
+            }
+
+            if (dryRun) {
+              core.info(`DRY RUN: would close issue #${match.number}: ${match.html_url}`);
+              return;
+            }
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: match.number,
+              body: `Closing automatically as the ${subject} moves to the next sprint.`
+            });
+            await github.rest.issues.update({
+              owner,
+              repo,
+              issue_number: match.number,
+              state: "closed",
+              state_reason: "completed"
+            });
+            core.info(`Closed issue #${match.number}: ${match.html_url}`);
