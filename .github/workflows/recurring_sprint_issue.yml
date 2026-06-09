@@ -1,4 +1,4 @@
-name: Reusable Sprint Rotation Issue
+name: Reusable Recurring Sprint Issue Workflow
 
 # Reusable workflow that opens a weekly issue for the NEXT sprint and closes
 # the equivalent issue from the CURRENT sprint.
