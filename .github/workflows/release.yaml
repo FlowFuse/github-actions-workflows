@@ -32,6 +32,7 @@ jobs:
           - { name: scan_container_image, path: actions/scan_container_image }
           - { name: update-nr-flows, path: actions/update-nr-flows }
           - { name: project-automation, path: .github/workflows/project-automation.yaml }
+          - { name: recurring_sprint_issue, path: .github/workflows/recurring_sprint_issue.yml }
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
