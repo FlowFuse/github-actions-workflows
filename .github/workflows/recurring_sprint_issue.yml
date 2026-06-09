@@ -1,4 +1,4 @@
-name: Reusable Recurring Sprint Issue Workflow
+name: Recurring Sprint Issue
 
 # Reusable workflow that opens a weekly issue for the NEXT sprint and closes
 # the equivalent issue from the CURRENT sprint.
