@@ -158,8 +158,9 @@ jobs:
             const existing = await github.rest.search.issuesAndPullRequests({
               q: `repo:${owner}/${repo} is:issue is:open in:title "${title}"`
             });
-            if (existing.data.total_count > 0) {
-              core.info(`Issue already exists: ${title}`);
+            const duplicate = existing.data.items.find((i) => i.title === title);
+            if (duplicate) {
+              core.info(`Issue already exists: #${duplicate.number} ${title}`);
               return;
             }
 
