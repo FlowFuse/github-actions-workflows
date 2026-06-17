@@ -11,9 +11,6 @@ on:
 jobs:
   add-to-project-board:
     name: Add issue to project
-    if: | 
-      github.repository != 'FlowFuse/website' &&
-      github.repository != 'FlowFuse/node-red-dashboard'
     runs-on: ubuntu-latest
     steps:
       - name: Generate a token
@@ -45,7 +42,7 @@ jobs:
           label-operator: AND
           project-url: https://github.com/orgs/FlowFuse/projects/10
           github-token: ${{ steps.generate_token.outputs.token }}
-  
+
   add-to-dashboard-backlog:
     name: Add issues to the Dashboard Backlog project board
     if: github.repository == 'FlowFuse/node-red-dashboard'
