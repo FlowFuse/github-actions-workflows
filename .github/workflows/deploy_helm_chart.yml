@@ -341,6 +341,7 @@ jobs:
           token: ${{ secrets.slack_token }}
           payload: |
             channel: ${{ inputs.slack_channel_id }}
+            text: "${{ inputs.chart_name }} ${{ inputs.environment }} deployment started (In Progress)"
             blocks:
               - type: "header"
                 text:
@@ -411,6 +412,7 @@ jobs:
           payload: |
             channel: ${{ inputs.slack_channel_id }}
             ts: ${{ steps.send_notification.outputs.ts }}
+            text: "${{ inputs.chart_name }} ${{ inputs.environment }} deployment finished (Completed)"
             blocks:
               - type: "header"
                 text:
