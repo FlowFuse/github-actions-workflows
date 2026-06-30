@@ -60,3 +60,21 @@ jobs:
           labeled: needs-triage
           project-url: https://github.com/orgs/FlowFuse/projects/15
           github-token: ${{ steps.generate_token.outputs.token }}
+
+  add-to-certified-nodes-board:
+    name: Add certified node requests to the Certified Nodes board
+    if: github.repository == 'FlowFuse/CloudProject'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate a token
+        id: generate_token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.app-client-id }}
+          private-key: ${{ secrets.app-private-key }}
+          owner: ${{ github.repository_owner }}
+      - uses: actions/add-to-project@5afcf98fcd03f1c2f92c3c83f58ae24323cc57fd # v2.0.0
+        with:
+          labeled: area:certified-nodes
+          project-url: https://github.com/orgs/FlowFuse/projects/50
+          github-token: ${{ steps.generate_token.outputs.token }}
