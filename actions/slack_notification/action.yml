@@ -1,0 +1,230 @@
+name: "Slack notification"
+description: "Resolve Slack recipients from GitHub logins and send a Block Kit message via chat.postMessage"
+
+inputs:
+  bot-token:
+    description: 'Slack bot token (secrets.SLACK_GHBOT_TOKEN). Needs users:read, users.profile:read, chat:write.'
+    required: true
+  mode:
+    description: >-
+      Who to notify:
+      "channel" (post to channel-id),
+      "author" (DM the PR author),
+      "contributors" (DM PR author + requested reviewers + pusher, or the actor on workflow_dispatch).
+    required: true
+  blocks:
+    description: >-
+      Block Kit blocks as a JSON array (string). May contain placeholders substituted per send:
+      {{ROLE}} (recipient role), {{MENTION}} (resolved actor mention, channel mode),
+      and any {{KEY}} from the `values` input. All substitutions are JSON-escaped.
+    required: true
+  values:
+    description: >-
+      JSON object of placeholder KEY -> raw string, injected JSON-safely into `blocks` as {{KEY}}.
+      Build each value with toJSON() so arbitrary text (e.g. PR titles) stays valid JSON.
+    required: false
+    default: '{}'
+  channel-id:
+    description: 'Target channel ID for mode=channel.'
+    required: false
+    default: 'C067BD0377F'
+  github-field-id:
+    description: 'Slack custom profile field ID holding the GitHub username.'
+    required: false
+    default: 'Xf0A2BPU8U77'
+  mention-actor:
+    description: 'mode=channel only: resolve the actor and expose {{MENTION}} as a real Slack ping.'
+    required: false
+    default: 'false'
+  actor:
+    description: 'GitHub actor (used by mode=contributors/channel).'
+    required: false
+    default: ${{ github.actor }}
+  event-name:
+    description: 'Triggering event name (drives mode=contributors branching).'
+    required: false
+    default: ${{ github.event_name }}
+  pr-author:
+    description: 'PR author login (mode=author/contributors).'
+    required: false
+    default: ${{ github.event.pull_request.user.login }}
+  requested-reviewers:
+    description: 'Requested reviewers as JSON (mode=contributors).'
+    required: false
+    default: ${{ toJSON(github.event.pull_request.requested_reviewers) }}
+
+runs:
+  using: composite
+  steps:
+    # Resolve the recipient list. For author/contributors modes, each GitHub login is mapped to a
+    # Slack user ID by scanning workspace profiles and matching the custom GitHub profile field.
+    # Unresolved and bot users are dropped with a warning. Outputs `recipients` JSON and, for
+    # channel mode with mention-actor, `actor_mention`.
+    - name: Resolve Slack recipients
+      id: resolve
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+      env:
+        SLACK_BOT_TOKEN: ${{ inputs.bot-token }}
+        SLACK_GITHUB_FIELD_ID: ${{ inputs.github-field-id }}
+        MODE: ${{ inputs.mode }}
+        CHANNEL_ID: ${{ inputs.channel-id }}
+        MENTION_ACTOR: ${{ inputs.mention-actor }}
+        ACTOR: ${{ inputs.actor }}
+        EVENT_NAME: ${{ inputs.event-name }}
+        PR_AUTHOR: ${{ inputs.pr-author }}
+        REQUESTED_REVIEWERS: ${{ inputs.requested-reviewers }}
+      with:
+        script: |
+          const token = process.env.SLACK_BOT_TOKEN;
+          const fieldId = process.env.SLACK_GITHUB_FIELD_ID;
+          const mode = process.env.MODE;
+          const eventName = process.env.EVENT_NAME;
+          const actor = process.env.ACTOR;
+          const mentionActor = process.env.MENTION_ACTOR === 'true';
+
+          // Scan the workspace once and resolve a set of GitHub logins -> Slack user IDs.
+          async function resolveLogins(targets) {
+            const want = new Set([...targets].map(t => t.toLowerCase()));
+            const resolved = new Map();
+            if (want.size === 0) return resolved;
+            let cursor;
+            outer: do {
+              const params = new URLSearchParams({ limit: '200' });
+              if (cursor) params.set('cursor', cursor);
+              const res = await fetch(`https://slack.com/api/users.list?${params}`, {
+                headers: { Authorization: `Bearer ${token}` }
+              });
+              const data = await res.json();
+              if (!data.ok) { core.setFailed(`Slack users.list error: ${data.error}`); return resolved; }
+              for (const member of data.members) {
+                if (member.deleted || member.is_bot) continue;
+                const profileRes = await fetch(`https://slack.com/api/users.profile.get?user=${member.id}`, {
+                  headers: { Authorization: `Bearer ${token}` }
+                });
+                const profileData = await profileRes.json();
+                if (!profileData.ok) continue;
+                const ghField = profileData.profile?.fields?.[fieldId]?.value;
+                if (!ghField) continue;
+                const ghLower = ghField.toLowerCase();
+                if (want.has(ghLower)) {
+                  resolved.set(ghLower, member.id);
+                  if (resolved.size === want.size) break outer;
+                }
+              }
+              cursor = data.response_metadata?.next_cursor;
+            } while (cursor);
+            return resolved;
+          }
+
+          // 1. Desired recipients (logins + roles) per mode. Bots are skipped (no Slack profile).
+          const wanted = [];
+          const seen = new Set();
+          const add = (login, role) => {
+            if (!login || login.endsWith('[bot]')) return;
+            const key = login.toLowerCase();
+            if (seen.has(key)) return;
+            seen.add(key);
+            wanted.push({ github: key, role });
+          };
+
+          if (mode === 'author') {
+            add(process.env.PR_AUTHOR, 'Author');
+          } else if (mode === 'contributors') {
+            if (eventName === 'workflow_dispatch') {
+              add(actor, 'Trigger');
+            } else {
+              add(process.env.PR_AUTHOR, 'Author');
+              for (const r of JSON.parse(process.env.REQUESTED_REVIEWERS || '[]')) add(r.login, 'Reviewer');
+              add(actor, 'Pusher');
+            }
+          } else if (mode !== 'channel') {
+            core.setFailed(`Unknown mode: ${mode}`);
+            return;
+          }
+
+          // 2. Resolve recipients + (optionally) the actor for a channel mention, in one scan.
+          const targets = new Set(wanted.map(w => w.github));
+          if (mentionActor && actor) targets.add(actor.toLowerCase());
+          const resolved = await resolveLogins(targets);
+
+          // 3. Actor mention for channel posts (real ping if resolved, else plain login).
+          let actorMention = '';
+          if (mentionActor) {
+            const id = actor ? resolved.get(actor.toLowerCase()) : undefined;
+            if (id) { actorMention = `<@${id}>`; }
+            else { core.warning(`No Slack user found with GitHub username: ${actor}`); actorMention = actor || ''; }
+          }
+          core.setOutput('actor_mention', actorMention);
+
+          // 4. Final recipient list.
+          let recipients;
+          if (mode === 'channel') {
+            recipients = [{ slack_id: process.env.CHANNEL_ID, role: 'Channel' }];
+          } else {
+            recipients = [];
+            for (const w of wanted) {
+              const id = resolved.get(w.github);
+              if (id) recipients.push({ slack_id: id, github: w.github, role: w.role });
+              else core.warning(`No Slack user found with GitHub username: ${w.github} (role: ${w.role})`);
+            }
+          }
+          core.info(`Recipients: ${recipients.length}`);
+          core.setOutput('recipients', JSON.stringify(recipients));
+
+    - name: Send Slack notification
+      if: steps.resolve.outputs.recipients != '' && steps.resolve.outputs.recipients != '[]'
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+      env:
+        SLACK_BOT_TOKEN: ${{ inputs.bot-token }}
+        RECIPIENTS: ${{ steps.resolve.outputs.recipients }}
+        ACTOR_MENTION: ${{ steps.resolve.outputs.actor_mention }}
+        BLOCKS: ${{ inputs.blocks }}
+        VALUES: ${{ inputs.values }}
+      with:
+        script: |
+          const token = process.env.SLACK_BOT_TOKEN;
+          const recipients = JSON.parse(process.env.RECIPIENTS || '[]');
+          const template = process.env.BLOCKS;
+          const actorMention = process.env.ACTOR_MENTION || '';
+          const values = JSON.parse(process.env.VALUES || '{}');
+
+          if (recipients.length === 0) { core.info('No recipients; nothing to send'); return; }
+
+          // Insert `raw` in place of {{key}} inside a JSON string literal, JSON-escaped so quotes
+          // and newlines in the value never break the surrounding JSON.
+          const sub = (str, key, raw) => {
+            const escaped = JSON.stringify(String(raw)).slice(1, -1);
+            return str.split(`{{${key}}}`).join(escaped);
+          };
+
+          let failures = 0;
+          for (const r of recipients) {
+            let filled = template;
+            for (const [k, v] of Object.entries(values)) filled = sub(filled, k, v);
+            filled = sub(filled, 'ROLE', r.role || '');
+            filled = sub(filled, 'MENTION', actorMention);
+
+            let blocks;
+            try { blocks = JSON.parse(filled); }
+            catch (e) { core.setFailed(`Invalid blocks JSON after substitution: ${e.message}`); return; }
+
+            const res = await fetch('https://slack.com/api/chat.postMessage', {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json; charset=utf-8'
+              },
+              body: JSON.stringify({ channel: r.slack_id, blocks })
+            });
+            const data = await res.json();
+            if (!data.ok) {
+              core.warning(`Slack chat.postMessage failed for ${r.slack_id}: ${data.error}`);
+              failures++;
+            } else {
+              core.info(`Notified ${r.slack_id} (${r.role})`);
+            }
+          }
+
+          if (failures > 0 && failures === recipients.length) {
+            core.setFailed(`All ${failures} Slack notifications failed`);
+          }
