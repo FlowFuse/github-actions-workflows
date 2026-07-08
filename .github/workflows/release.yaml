@@ -68,3 +68,23 @@ jobs:
           git tag -f "${COMPONENT}/v${MAJOR}"
           git tag -f "${COMPONENT}/v${MAJOR}.${MINOR}"
           git push origin -f "${COMPONENT}/v${MAJOR}" "${COMPONENT}/v${MAJOR}.${MINOR}"
+
+  notify-slack:
+    name: Notify about release failure
+    needs: [release]
+    if: failure()
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Notify Slack
+      uses: FlowFuse/github-actions-workflows/actions/slack_notification@slack_notification/v1
+      with:
+        bot-token: ${{ secrets.SLACK_GHBOT_TOKEN }}
+        mode: channel
+        blocks: |
+          [
+            { "type": "header", "text": { "type": "plain_text", "text": ":x: ${{ github.workflow }} workflow failed", "emoji": true } },
+            { "type": "divider" },
+            { "type": "section", "text": { "type": "mrkdwn", "text": "<${{ github.server_url }}/${{ github.repository }}/actions/workflows/release.yaml|${{ github.workflow }}> workflow failed to complete successfully." } },
+            { "type": "section", "text": { "type": "mrkdwn", "text": "*Workflow run:*\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View>" } }
+          ]
