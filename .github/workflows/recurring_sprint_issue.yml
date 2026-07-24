@@ -53,8 +53,83 @@ permissions:
   contents: read
 
 jobs:
+  check-sprint:
+    name: Check sprint
+    runs-on: ubuntu-latest
+    outputs:
+      continue: ${{ steps.check.outputs.continue }}
+    steps:
+      - name: Generate a token
+        id: generate_token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.GH_BOT_APP_ID }}
+          private-key: ${{ secrets.GH_BOT_APP_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+
+      - name: Compare current and next sprint
+        id: check
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          PROJECT_NUMBER: ${{ inputs.project_number }}
+          SPRINT_FIELD_NAME: ${{ inputs.sprint_field_name }}
+        with:
+          github-token: ${{ steps.generate_token.outputs.token }}
+          script: |
+            const owner = context.repo.owner;
+            const projectNumber = Number(process.env.PROJECT_NUMBER);
+            const sprintFieldName = process.env.SPRINT_FIELD_NAME;
+
+            const today = new Date();
+            // Next weekly run is 7 days from today, at the same time of day (UTC).
+            const nextRun = new Date(today);
+            nextRun.setUTCDate(nextRun.getUTCDate() + 7);
+
+            let currentSprint = null;
+            let nextSprint = null;
+            try {
+              const data = await github.graphql(`
+                query($org: String!, $number: Int!, $field: String!) {
+                  organization(login: $org) {
+                    projectV2(number: $number) {
+                      field(name: $field) {
+                        ... on ProjectV2IterationField {
+                          configuration {
+                            iterations { id title startDate duration }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              `, { org: owner, number: projectNumber, field: sprintFieldName });
+
+              const iterations = data.organization.projectV2.field?.configuration?.iterations || [];
+              const contains = (it, when) => {
+                const start = new Date(it.startDate);
+                const end = new Date(start);
+                end.setUTCDate(end.getUTCDate() + it.duration);
+                return when >= start && when < end;
+              };
+              currentSprint = iterations.find((it) => contains(it, today));
+              nextSprint = iterations.find((it) => contains(it, nextRun));
+            } catch (e) {
+              core.warning(`Could not resolve sprints: ${e.message}`);
+            }
+
+            // Only a positively-detected identical pair blocks the run; any
+            // other outcome (gap, missing config, API error) proceeds as before.
+            const shouldContinue = !(currentSprint && nextSprint && currentSprint.id === nextSprint.id);
+            if (!shouldContinue) {
+              core.info(`Sprint "${currentSprint.title}" has not advanced; open/close will be skipped.`);
+            }
+            core.setOutput("continue", shouldContinue ? "true" : "false");
+
   open-issue:
     name: Open sprint rotation issue
+    needs: check-sprint
+    if: needs.check-sprint.outputs.continue == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repository
@@ -231,7 +306,8 @@ jobs:
 
   close-previous-issue:
     name: Close current sprint's issue
-    needs: open-issue
+    needs: [check-sprint, open-issue]
+    if: needs.check-sprint.outputs.continue == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Generate a token
