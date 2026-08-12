@@ -119,6 +119,15 @@ jobs:
       - name: Install Dependencies
         run: npm install
         working-directory: 'website'
+      # nuxt-og-image fetches its satori font on first render, and that download is the only
+      # thing the og-image cache directory holds at any size. Keyed on the lockfile that
+      # pins the module, so an unchanged lockfile hits exactly and writes nothing back.
+      - name: Cache the nuxt-og-image font download
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: website/nuxt/node_modules/.cache/nuxt/.nuxt/cache/og-image
+          key: og-image-font-${{ runner.os }}-${{ hashFiles('website/package-lock.json') }}
+          restore-keys: og-image-font-${{ runner.os }}-
       - name: Run unit tests
         if: inputs.run_unit_tests
         run: npm test
