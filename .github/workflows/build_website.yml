@@ -119,15 +119,19 @@ jobs:
       - name: Install Dependencies
         run: npm install
         working-directory: 'website'
-      # nuxt-og-image fetches its satori font on first render, and that download is the only
-      # thing the og-image cache directory holds at any size. Keyed on the lockfile that
-      # pins the module, so an unchanged lockfile hits exactly and writes nothing back.
-      - name: Cache the nuxt-og-image font download
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      # nuxt-og-image content-addresses each rendered image by component, props and module
+      # version, so an entry is only ever added and never goes stale. Restoring the newest
+      # entry means only the pages whose title or section actually changed pay to render.
+      # Restore and save are separate steps because the entry has to keep accumulating:
+      # actions/cache writes nothing back when the key it restored from was an exact hit.
+      - name: Restore the nuxt-og-image caches
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: website/nuxt/node_modules/.cache/nuxt/.nuxt/cache/og-image
-          key: og-image-font-${{ runner.os }}-${{ hashFiles('website/package-lock.json') }}
-          restore-keys: og-image-font-${{ runner.os }}-
+          path: |
+            website/nuxt/node_modules/.cache/nuxt/.nuxt/cache/og-image
+            website/nuxt/node_modules/.cache/nuxt/.nuxt/cache/og-image-render
+          key: og-image-cache-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: og-image-cache-${{ runner.os }}-
       - name: Run unit tests
         if: inputs.run_unit_tests
         run: npm test
@@ -137,6 +141,17 @@ jobs:
       - name: Build the forge
         run: npm run ${{ inputs.deploy_preview && 'build:nuxt' || 'build:nuxt:skip-images' }}
         working-directory: 'website'
+      # Only the default branch writes an entry. Saving on every run left one entry per push
+      # in a cache the repository shares across workflows, and the default branch builds
+      # often enough for the accumulated entry to stay useful to pull requests restoring it.
+      - name: Save the nuxt-og-image caches
+        if: github.ref == 'refs/heads/main'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            website/nuxt/node_modules/.cache/nuxt/.nuxt/cache/og-image
+            website/nuxt/node_modules/.cache/nuxt/.nuxt/cache/og-image-render
+          key: og-image-cache-${{ runner.os }}-${{ github.run_id }}
       # A preview processes images, and Nuxt Image then points every <img> at
       # /.netlify/images, which Netlify only answers at runtime. That path is absent from the
       # static tree hyperlink walks, so every image reads as a broken link. hyperlink 0.3.2
