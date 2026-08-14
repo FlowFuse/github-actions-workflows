@@ -119,6 +119,15 @@ jobs:
       - name: Install Dependencies
         run: npm install
         working-directory: 'website'
+      # nuxt-og-image fetches its satori font on first render, and that download is the only
+      # thing the og-image cache directory holds at any size. Keyed on the lockfile that
+      # pins the module, so an unchanged lockfile hits exactly and writes nothing back.
+      - name: Cache the nuxt-og-image font download
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: website/nuxt/node_modules/.cache/nuxt/.nuxt/cache/og-image
+          key: og-image-font-${{ runner.os }}-${{ hashFiles('website/package-lock.json') }}
+          restore-keys: og-image-font-${{ runner.os }}-
       - name: Run unit tests
         if: inputs.run_unit_tests
         run: npm test
@@ -128,7 +137,14 @@ jobs:
       - name: Build the forge
         run: npm run ${{ inputs.deploy_preview && 'build:nuxt' || 'build:nuxt:skip-images' }}
         working-directory: 'website'
+      # A preview processes images, and Nuxt Image then points every <img> at
+      # /.netlify/images, which Netlify only answers at runtime. That path is absent from the
+      # static tree hyperlink walks, so every image reads as a broken link. hyperlink 0.3.2
+      # cannot be told to ignore a path, so the check runs on the builds that keep real file
+      # paths. The caller that previews is a documentation pull request, and
+      # FlowFuse/flowfuse checks its own documentation links in a separate job.
       - name: Check links
+        if: ${{ !inputs.deploy_preview }}
         uses: untitaker/hyperlink@9375bc4063712ad490d5eb3d54df0b6aade15e54 # 0.3.2
         with:
           args: website/nuxt/dist/ --check-anchors --sources website/src
