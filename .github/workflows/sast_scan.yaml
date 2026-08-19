@@ -55,7 +55,7 @@ jobs:
           TRIVY_FAIL_ON_SEVERITY: ${{ inputs.fail_on_severity }}
 
       - name: Upload scan results to GitHub
-        uses: github/codeql-action/upload-sarif@5595ccaf912efad79be6eef63a5619ff05969be3 # v4.37.6
+        uses: github/codeql-action/upload-sarif@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
         if: ${{ inputs.upload_results_to_ghas }}
         with:
           sarif_file: 'trivy-results.sarif'
