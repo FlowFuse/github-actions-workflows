@@ -114,7 +114,6 @@ jobs:
           node-version: ${{ inputs.node_version }}
           registry-url: '${{ inputs.npm_registry_url }}'
           scope: '@flowfuse'
-          always-auth: true
 
       - name: Set dependecies versions
         if: ${{ inputs.package_dependencies != '' }}
