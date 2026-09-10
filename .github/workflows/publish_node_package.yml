@@ -103,6 +103,7 @@ jobs:
         working-directory: ${{ inputs.working_directory }}
         run: |
           npm version prerelease --preid `git rev-parse --short HEAD`-`date +%Y%m%d%H%M` --no-git-tag-version
+          echo "package_version=$(npm pkg get version | tr -d '\"')" >> $GITHUB_ENV
 
       - name: Configure node
         if: |
@@ -169,5 +170,24 @@ jobs:
         working-directory: ${{ inputs.working_directory }}
         run: |
           npm publish ${{ env.NPM_PUBLISH_PARAMETERS }} --tag ${{ env.release_name }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.npm_registry_token }}
+
+      - name: Verify published package is available
+        if: ${{ inputs.publish_package }}
+        working-directory: ${{ inputs.working_directory }}
+        run: |
+          attempt=0
+          while true; do
+            attempt=$((attempt + 1))
+            published_version=$(npm view "${{ inputs.package_name }}@${{ env.package_version }}" version --prefer-online 2>/dev/null || true)
+            tagged_version=$(npm view "${{ inputs.package_name }}" "dist-tags.${{ env.release_name }}" --prefer-online 2>/dev/null || true)
+            if [ "$published_version" = "${{ env.package_version }}" ] && [ "$tagged_version" = "${{ env.package_version }}" ]; then
+              echo "### :white_check_mark: ${{ inputs.package_name }}@${{ env.package_version }} available, tag \`${{ env.release_name }}\` resolves to it" >> $GITHUB_STEP_SUMMARY
+              exit 0
+            fi
+            echo "Attempt $attempt: version=${published_version:-missing} tag=${tagged_version:-missing} expected=${{ env.package_version }}; retrying in 30s"
+            sleep 30
+          done
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_registry_token }}
