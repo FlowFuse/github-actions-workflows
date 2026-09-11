@@ -41,7 +41,7 @@ on:
         description: 'Scope of the package to publish'
         type: string
         required: false
-        default: ''
+        default: '@flowfuse'
       publish_package:
         description: 'Publish package to private registry'
         required: false
@@ -118,7 +118,7 @@ jobs:
         with:
           node-version: ${{ inputs.node_version }}
           registry-url: '${{ inputs.npm_registry_url }}'
-          scope: '@flowfuse'
+          scope: ${{ inputs.package_scope }}
 
       - name: Set dependecies versions
         if: ${{ inputs.package_dependencies != '' }}
