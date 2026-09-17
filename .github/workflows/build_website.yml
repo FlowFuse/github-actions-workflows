@@ -152,6 +152,21 @@ jobs:
             website/nuxt/node_modules/.cache/nuxt/.nuxt/cache/og-image
             website/nuxt/node_modules/.cache/nuxt/.nuxt/cache/og-image-render
           key: og-image-cache-${{ runner.os }}-${{ github.run_id }}
+      # hyperlink maps a broken link back to the file that produced it, which it needs a tree
+      # of sources for. That was src/ while Eleventy generated the pages; once it goes, the
+      # markdown behind them is nuxt/content. Resolving it keeps one definition working on
+      # either side of that change, and it matters because hyperlink 0.3.2 exits non-zero on a
+      # --sources path that is not there: the step ends before printing the report it was
+      # asked for, so a real broken link reads as a missing directory.
+      - name: Resolve the link-check sources
+        id: link_sources
+        if: ${{ !inputs.deploy_preview }}
+        run: |
+          if [ -d website/src ]; then
+            echo "dir=website/src" >> "$GITHUB_OUTPUT"
+          else
+            echo "dir=website/nuxt/content" >> "$GITHUB_OUTPUT"
+          fi
       # A preview processes images, and Nuxt Image then points every <img> at
       # /.netlify/images, which Netlify only answers at runtime. That path is absent from the
       # static tree hyperlink walks, so every image reads as a broken link. hyperlink 0.3.2
@@ -162,7 +177,7 @@ jobs:
         if: ${{ !inputs.deploy_preview }}
         uses: untitaker/hyperlink@9375bc4063712ad490d5eb3d54df0b6aade15e54 # 0.3.2
         with:
-          args: website/nuxt/dist/ --check-anchors --sources website/src
+          args: website/nuxt/dist/ --check-anchors --sources ${{ steps.link_sources.outputs.dir }}
       - name: Upload an unpublished preview to Netlify
         id: deploy
         if: inputs.deploy_preview
