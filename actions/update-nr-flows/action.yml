@@ -20,7 +20,7 @@ runs:
         COUNT=1
         until [ $COUNT -gt 30 ]; do
           sleep 60
-          LATEST=`npm info "${{ inputs.package }}" --json version --prefer-online | sed -e 's/"//g'`
+          LATEST=`npm info "${{ inputs.package }}" version --prefer-online`
           echo "current version $LATEST"
           if [[ "$VERSION" == "$LATEST" ]]
           then
