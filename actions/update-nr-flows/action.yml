@@ -18,8 +18,8 @@ runs:
         URL=https://flows.nodered.org
         VERSION=$(echo "${{ inputs.version }}" | sed -e 's/^[^0-9]*//')
         COUNT=1
-        until [ $COUNT -gt 5 ]; do
-          sleep 10
+        until [ $COUNT -gt 30 ]; do
+          sleep 60
           LATEST=`npm info "${{ inputs.package }}" --json version | sed -e 's/"//g'`
           echo "current version $LATEST"
           if [[ "$VERSION" == "$LATEST" ]]
@@ -29,9 +29,9 @@ runs:
           ((COUNT++))
         done
 
-        if [ $COUNT -gt 5 ]
+        if [ $COUNT -gt 30 ]
         then
-          echo "timed out after 50 seconds" 
+          echo "timed out after 30 minutes" 
           exit 1
         fi
 
