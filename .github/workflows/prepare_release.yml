@@ -1,0 +1,42 @@
+name: Prepare release
+
+on:
+  workflow_call:
+    inputs:
+      config_file:
+        description: 'Path to the Release Please config file'
+        type: string
+        required: false
+        default: '.github/release-please-config.json'
+      manifest_file:
+        description: 'Path to the Release Please manifest file'
+        type: string
+        required: false
+        default: '.github/.release-please-manifest.json'
+    secrets:
+      GH_BOT_APP_ID:
+        description: "GitHub App client/app ID used to mint an installation token."
+        required: true
+      GH_BOT_APP_KEY:
+        description: "GitHub App private key used to mint an installation token."
+        required: true
+
+permissions: {}
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate a token
+        id: generate_token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.GH_BOT_APP_ID }}
+          private-key: ${{ secrets.GH_BOT_APP_KEY }}
+
+      - name: Run Release Please
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          token: ${{ steps.generate_token.outputs.token }}
+          config-file: ${{ inputs.config_file }}
+          manifest-file: ${{ inputs.manifest_file }}
