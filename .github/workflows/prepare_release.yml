@@ -14,7 +14,6 @@ on:
         required: false
         default: '.github/.release-please-manifest.json'
     secrets:
-      # App token instead of GITHUB_TOKEN so the release/tag it creates triggers downstream workflows.
       GH_BOT_APP_ID:
         description: "GitHub App client/app ID used to mint an installation token."
         required: true
@@ -22,8 +21,6 @@ on:
         description: "GitHub App private key used to mint an installation token."
         required: true
 
-# GITHUB_TOKEN unused: release-please runs with the GitHub App token below,
-# whose scopes come from the App installation (needs Contents, Pull requests, Issues: RW).
 permissions: {}
 
 jobs:
@@ -36,7 +33,6 @@ jobs:
         with:
           client-id: ${{ secrets.GH_BOT_APP_ID }}
           private-key: ${{ secrets.GH_BOT_APP_KEY }}
-          # owner + repositories omitted: token scoped to current (caller) repo only
 
       - name: Run Release Please
         uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
